@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "textual-shell"
+version = "0.0.1"
+authors = [
+    { name="Jason Lawrence", email="thejasonlawrence1@gmail.com" },
+]
+description = "A shell widget for textual."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent"
+]
+
+[project.urls]
+Homepage = "https://github.com/Jason-Lawrence/textual-shell/"
