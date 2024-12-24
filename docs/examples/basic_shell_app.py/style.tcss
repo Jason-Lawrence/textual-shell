@@ -1,0 +1,62 @@
+Screen {
+    layers: shell popup;
+}
+
+#prompt-input {
+    border: none;
+    background: transparent;
+    margin-left: 0;
+    margin-top:1;
+    padding-left: 0;
+}
+
+#prompt-label{
+    margin-top: 1;
+    padding: 0;
+    padding-left: 1;
+}
+
+Prompt {
+    border: round white;
+    margin: 0;
+    padding: 0;
+    height: 4;
+    width: 100;
+    layout: horizontal
+}
+
+CommandList {
+    background: transparent;
+    border: round white;
+    height: auto;
+    width: 20;
+    layout: vertical;
+}
+
+#cmd-label {
+    text-align: center;
+}
+
+CommandList Rule {
+    color: white;
+    margin: 0;
+}
+
+#cmd-list {
+    background: transparent;
+    border: none;
+    text-align: center;
+}
+
+#auto-complete {
+    layer: popup;
+    offset: 20 8;
+    height: auto;
+    width: 20;
+    box-sizing: border-box;
+    border: round white;
+}
+
+Shell {
+    layout: horizontal;
+}

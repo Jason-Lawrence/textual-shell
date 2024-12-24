@@ -1,5 +1,6 @@
 from typing import Annotated, List, Any
 
+from .command import Command
 from textual import events
 from textual.app import ComposeResult
 from textual.geometry import Offset
@@ -13,6 +14,9 @@ from textual.widgets import (
     Rule, 
     TextArea 
 )
+
+class Help:
+    pass
 
 
 class CommandList(Widget):
@@ -141,7 +145,7 @@ class Suggestions(OptionList):
 
 class Shell(Widget):
     
-    def __init__(self, commands: Annotated[List[Any], 'List of Shell Commands']) -> None:
+    def __init__(self, commands: Annotated[List[Command], 'List of Shell Commands']) -> None:
         self.commands = commands
     
     is_prompt_focused = reactive(True)
@@ -198,7 +202,7 @@ class Shell(Widget):
     
     # The naming scheme is important.
     def on_prompt_command_input(self, event: Prompt.CommandInput) -> None:
-        cmd_input = event.cmd_input.strip().split(' ')
+        cmd_input = event.cmd_input.split(' ')
         if len(cmd_input) == 1:
             val = cmd_input[0]
             suggestions = ([cmd for cmd in self.commands if cmd.startswith(val)] 
