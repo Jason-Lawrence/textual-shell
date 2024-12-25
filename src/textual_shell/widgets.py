@@ -298,8 +298,11 @@ class Shell(Widget):
                     suggestions = []
             
             else:
-                cmd = self.get_cmd_obj(cmd_input[0])
-                suggestions = cmd.get_suggestions(cmd_input[-2])
+                if cmd := self.get_cmd_obj(cmd_input[0]):
+                    suggestions = cmd.get_suggestions(cmd_input[-2])
+                
+                else:
+                    suggestions = []
             
             suggestions = [sub_cmd for sub_cmd in suggestions if sub_cmd.startswith(cmd_input[-1])]
         
@@ -308,14 +311,24 @@ class Shell(Widget):
         
     def on_prompt_command_entered(self, event: Prompt.CommandEntered) -> None:
         cmd_line = event.cmd.split(' ')
-        cmd = self.get_cmd_obj(cmd_line.pop(0))
-        if cmd.name == 'help':
-            if show_help := self.get_cmd_obj(cmd_line[0]):
-                res = cmd.execute(show_help)
-                self.app.push_screen(HelpScreen(res))
+        cmd_name = cmd_line.pop(0)
+        if cmd := self.get_cmd_obj(cmd_name):
             
+            if cmd.name == 'help':
+                if show_help := self.get_cmd_obj(cmd_line[0]):
+                    res = cmd.execute(show_help)
+                    self.app.push_screen(HelpScreen(res))
+                    
+            else:
+                self.execute_command(cmd, *cmd_line)
+        
         else:
-            self.execute_command(cmd, *cmd_line)
+            self.notify(
+                f'[b]Command:[/b] {cmd_name} does not exist!',
+                severity='error',
+                title='Invalid Command',
+                timeout=5
+            )
         
     def on_suggestions_focus_change(self, event: Suggestions.FocusChange) -> None:
         self.are_suggestions_focused = event.is_focused
