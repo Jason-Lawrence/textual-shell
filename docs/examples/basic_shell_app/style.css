@@ -60,3 +60,39 @@ CommandList Rule {
 Shell {
     layout: horizontal;
 }
+
+HelpScreen {
+    align: center middle;
+    height: 50;
+}
+
+#help-dialog {
+    grid-size: 3;
+    grid-rows: 2 40;
+    grid-columns: 1fr 1fr 4;
+    width: 80;
+    height: auto;
+    background: $surface;
+    border: solid white;
+}
+
+#help-close {
+    column-span: 1;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+}
+
+#help-label {
+    column-span: 2;
+    content-align: center middle;
+    width: 1fr;
+    offset: 1 0;
+}
+
+#help-display {
+    column-span: 3;
+    row-span: 2;
+    content-align: center middle;
+    border-top: solid white;
+}

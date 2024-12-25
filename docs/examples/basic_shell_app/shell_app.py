@@ -7,7 +7,7 @@ from textual_shell.command import Help, Set
 
 class ShellApp(App):
     
-    CSS_PATH = 'style.tcss'
+    CSS_PATH = 'style.css'
     
     def compose(self) -> ComposeResult:
         yield Header()
