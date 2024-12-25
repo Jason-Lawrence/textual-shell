@@ -1,13 +1,15 @@
 from typing import Annotated, List, Any
 
-from textual import events
+from textual import events, work
 from textual.app import ComposeResult
+from textual.containers import Grid
 from textual.geometry import Offset
 from textual.reactive import reactive
 from textual.message import Message
-from textual.screen import Screen
+from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import (
+    Button,
     Input, 
     Label,
     Markdown,
@@ -15,15 +17,29 @@ from textual.widgets import (
     Rule, 
     TextArea 
 )
+from textual.worker import Worker, get_current_worker
 from textual_shell.command import Command
 
-class Help(Screen):
+class HelpScreen(ModalScreen):
+    
+    def __init__(
+        self,
+        help_text: Annotated[str, 'THe help text to display in the modal']
+    ) -> None:
+        super().__init__()
+        self.help_text = help_text
     
     def compose(self) -> ComposeResult:
-        yield Label('Help', id='help-label')
-        yield Markdown()
-    
-    
+        yield Grid(
+            Label('Help', id='help-label'),
+            Button('X', variant='error', id='help-close'),
+            Markdown(self.help_text, id='help-display'),
+            id='help-dialog'
+        )
+        
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == 'help-close':
+            self.app.pop_screen()
 
 
 class CommandList(Widget):
@@ -189,6 +205,8 @@ class Shell(Widget):
         for command in self.commands:
             if command.name == cmd:
                 return command
+            
+        return None
         
     def update_suggestions(
         self,
@@ -260,11 +278,12 @@ class Shell(Widget):
         cmd_line = event.cmd.split(' ')
         cmd = self.get_cmd_obj(cmd_line.pop(0))
         if cmd.name == 'help':
-            res = cmd.execute(self.get_cmd_obj(cmd_line[0]))
-            
+            if show_help := self.get_cmd_obj(cmd_line[0]):
+                res = cmd.execute(show_help)
+                self.app.push_screen(HelpScreen(res))
             
         else:
-            res = cmd.execute(*cmd_line)
+            self.execute_command(cmd, *cmd_line)
         
     def on_suggestions_focus_change(self, event: Suggestions.FocusChange) -> None:
         self.are_suggestions_focused = event.is_focused
@@ -286,3 +305,8 @@ class Shell(Widget):
         
         else:
             self.toggle_suggestions(False)
+     
+    @work(thread=True)   
+    def execute_command(self, cmd: Command, *cmd_line):
+        worker = get_current_worker()
+        res = cmd.execute(*cmd_line)
