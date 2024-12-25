@@ -65,8 +65,9 @@ class Command(ABC):
         return [child.data.name for child in children_nodes]
             
     def help(self):
-        """This will show self.HelpMessage in a pop up in the textual app."""
-        return self.cmd_tree.get_node(self.cmd_tree.root)        
+        """This will generate help text in a pop up in the textual app."""
+        help_text = '\n'.join([node.data for node in self.cmd_tree.all_nodes()])
+        return help_text     
     
     @abstractmethod
     def execute(self):
@@ -86,9 +87,18 @@ class Help(Command):
         super().__init__()
         arg = CommandArgument('help', 'Show help for commands')
         self.add_argument_to_cmd_tree(arg)
+        
+    def help(self):
+        """"""
+        root = self.cmd_tree.get_node(self.name)
+        help_text = f"""
+            ### Command: {self.name}
+            **Description:** {root.data.description}
+        """
+        return help_text
     
     def execute(self, cmd: Command):
-        help = cmd.help()
+        return cmd.help()
     
 
 class Set(Command):

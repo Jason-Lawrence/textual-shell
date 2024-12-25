@@ -5,18 +5,25 @@ from textual.app import ComposeResult
 from textual.geometry import Offset
 from textual.reactive import reactive
 from textual.message import Message
+from textual.screen import Screen
 from textual.widget import Widget
 from textual.widgets import (
     Input, 
-    Label, 
+    Label,
+    Markdown,
     OptionList, 
     Rule, 
     TextArea 
 )
 from textual_shell.command import Command
 
-class Help:
-    pass
+class Help(Screen):
+    
+    def compose(self) -> ComposeResult:
+        yield Label('Help', id='help-label')
+        yield Markdown()
+    
+    
 
 
 class CommandList(Widget):
@@ -233,8 +240,17 @@ class Shell(Widget):
                                 if val else self.command_list)
 
         else:
-            cmd = self.get_cmd_obj(cmd_input[0])
-            suggestions = cmd.get_suggestions(cmd_input[-2])
+            if cmd_input[0] == 'help':
+                if len(cmd_input) < 3:
+                    suggestions = self.command_list
+                
+                else: 
+                    suggestions = []
+            
+            else:
+                cmd = self.get_cmd_obj(cmd_input[0])
+                suggestions = cmd.get_suggestions(cmd_input[-2])
+            
             suggestions = [sub_cmd for sub_cmd in suggestions if sub_cmd.startswith(cmd_input[-1])]
         
         self.update_suggestions(suggestions)
@@ -243,7 +259,12 @@ class Shell(Widget):
     def on_prompt_command_entered(self, event: Prompt.CommandEntered) -> None:
         cmd_line = event.cmd.split(' ')
         cmd = self.get_cmd_obj(cmd_line.pop(0))
-        res = cmd.execute(*cmd_line)
+        if cmd.name == 'help':
+            res = cmd.execute(self.get_cmd_obj(cmd_line[0]))
+            
+            
+        else:
+            res = cmd.execute(*cmd_line)
         
     def on_suggestions_focus_change(self, event: Suggestions.FocusChange) -> None:
         self.are_suggestions_focused = event.is_focused
