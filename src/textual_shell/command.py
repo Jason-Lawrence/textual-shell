@@ -30,6 +30,7 @@ class Command(ABC):
         self,
         cmd_tree: Annotated[treelib.Tree, 'The command line structure']=None,
     ) -> None:
+        self.name = self.__class__.__name__.lower()
         if cmd_tree and not isinstance(cmd_tree, treelib.Tree):
             raise ValueError('cmd_tree is not a Tree from treelib.')
         
@@ -63,13 +64,15 @@ class Command(ABC):
         
         return [child.data.name for child in children_nodes]
             
+    def help(self):
+        """This will show self.HelpMessage in a pop up in the textual app."""
+        return self.cmd_tree.get_node(self.cmd_tree.root)        
+    
     @abstractmethod
     def execute(self):
         pass
     
-    def help(self):
-        """This will show self.HelpMessage in a pop up in the textual app."""
-        return self.help_info
+
     
     
 class Help(Command):
@@ -79,11 +82,13 @@ class Help(Command):
     Examples:
         help <command>
     """
+    def __init__(self) -> None:
+        super().__init__()
+        arg = CommandArgument('help', 'Show help for commands')
+        self.add_argument_to_cmd_tree(arg)
+    
     def execute(self, cmd: Command):
-        cmd.help()
-        
-    def help(self):
-        pass
+        help = cmd.help()
     
 
 class Set(Command):
@@ -91,50 +96,54 @@ class Set(Command):
     Set Shell Variables and update config.ini via configparser.
     
     Examples:
-        set new section <section> # creates new section in config.ini
-        set new section <section> <setting>  Optional[str, 'value']# creates a new setting in the section
         set <section> <setting> <value> # sets the variable in the section to the value.
     """
     def __init__(self) -> None:
         super().__init__()
         arg = CommandArgument('set', 'Set new shell variables.')
         self.add_argument_to_cmd_tree(arg)
+        self._load_sections_into_tree()
         
-        new = CommandArgument('new', 'Add a new section or setting.')
-        self.add_argument_to_cmd_tree(new, parent=arg.name)
-        
-    def get_suggestions(
+    def _load_sections_into_tree(self) -> None:
+        data = configure.get_config()
+        for section in data:
+            self._add_section_to_tree(section, data[section]['description'])
+            for setting in data[section]:
+                if setting == 'description':
+                    continue
+                
+                self._add_setting_to_tree(
+                    section,
+                    setting,
+                    data[section][setting]['description']
+                )
+            
+    def _add_setting_to_tree(
         self,
-        current_arg: str
-    ) -> Annotated[List[str], 'A list of possible next values']:
-        try:
-            children_nodes = self.cmd_tree.children(current_arg)
-        
-        except treelib.exceptions.NodeIDAbsentError as error:
-            children_nodes = None
-        
-        return [child.data.name for child in children_nodes]
+        section: Annotated[str, 'Section name'],
+        setting: Annotated[str, 'Setting name'],
+        description: Annotated[str, 'Description of the section']=None
+    ) -> None:
+        arg = CommandArgument(setting, description)
+        self.add_argument_to_cmd_tree(arg, parent=section)
+            
+    def _add_section_to_tree(
+        self,
+        section: Annotated[str, 'Section name'],
+        description: Annotated[str, 'Description of the section']=None
+    ) -> None:
+        arg = CommandArgument(section, description)
+        self.add_argument_to_cmd_tree(arg, parent='set')
     
     def update_settings(
         self, 
         section: Annotated[str, 'Section name'],
         setting: Annotated[str, 'Setting name'],
-        default: Annotated[str, 'Default value']=None
-    ) -> None:
-        configure.update_setting(section, setting, default)
+        value: Annotated[str, 'Default value']=None
+    ) -> int:
+        configure.update_setting(section, setting, value)
+        return 0
         
-    def add_new_section(
-        self,
-        section: Annotated[str, 'Section name'],
-        description: Annotated[str, 'Description of the section']=None
-    ) -> None:
-        configure.add_section(section)
-        configure.update_setting(section, 'description', description)
-        arg = CommandArgument(section, description)
-        self.add_argument_to_cmd_tree(arg, parent='set')
-        
-    def execute(self):
-        pass
-    
-    def help(self):
-        pass
+    def execute(self, *args) -> int:
+        return self.update_settings(*args)
+

@@ -51,7 +51,7 @@ def update_setting(
     if section not in config:
         config[section] = {}
         
-    config[section][setting] = value
+    config[section][setting]['value'] = value
     
     with open(path, 'w') as config_file:
         yaml.dump(config, config_file)

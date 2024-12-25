@@ -1,6 +1,5 @@
 from typing import Annotated, List, Any
 
-from .command import Command
 from textual import events
 from textual.app import ComposeResult
 from textual.geometry import Offset
@@ -14,6 +13,7 @@ from textual.widgets import (
     Rule, 
     TextArea 
 )
+from textual_shell.command import Command
 
 class Help:
     pass
@@ -78,6 +78,13 @@ class Prompt(Widget):
             self.cmd_input = cmd_input
             self.cursor_offset = offset
             
+    
+    class CommandEntered(Message):
+        """User entered a command."""
+        def __init__(self, cmd: str):
+            super().__init__()
+            self.cmd = cmd
+            
     cmd_input = reactive('')
     
     def on_mount(self) -> None:
@@ -98,6 +105,13 @@ class Prompt(Widget):
                 prompt_input.cursor_screen_offset
             )
         )
+        
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        event.stop()
+        prompt_input = self.query_one('#prompt-input', Input)
+        prompt_input.value = ''
+        prompt_input.action_home()
+        self.post_message(self.CommandEntered(event.value))
         
 
 class Suggestions(OptionList):
@@ -145,19 +159,29 @@ class Suggestions(OptionList):
 
 class Shell(Widget):
     
-    def __init__(self, commands: Annotated[List[Command], 'List of Shell Commands']) -> None:
-        self.commands = commands
-    
     is_prompt_focused = reactive(True)
     are_suggestions_focused = reactive(False)
     
+    def __init__(
+        self,
+        commands: Annotated[List[Command], 'List of Shell Commands']
+    ) -> None:
+        super().__init__()
+        self.commands = commands
+        self.command_list = [cmd.name for cmd in self.commands]
+    
     def on_mount(self):
-        self.update_suggestions(list(self.commands.keys()))
+        self.update_suggestions(self.command_list)
         
     def compose(self) -> ComposeResult:
-        yield CommandList(list(self.commands))
+        yield CommandList(self.command_list)
         yield Prompt()
         yield Suggestions(id='auto-complete')
+        
+    def get_cmd_obj(self, cmd) -> Command:
+        for command in self.commands:
+            if command.name == cmd:
+                return command
         
     def update_suggestions(
         self,
@@ -205,21 +229,21 @@ class Shell(Widget):
         cmd_input = event.cmd_input.split(' ')
         if len(cmd_input) == 1:
             val = cmd_input[0]
-            suggestions = ([cmd for cmd in self.commands if cmd.startswith(val)] 
-                                if val else list(self.commands.keys()))
+            suggestions = ([cmd for cmd in self.command_list if cmd.startswith(val)] 
+                                if val else self.command_list)
 
         else:
-            commands = self.commands
-            for key in cmd_input:
-                sub_cmds = commands.get(key, None)
-                if sub_cmds:
-                    commands = sub_cmds
-                    continue
-                
-            suggestions = [sub_cmd for sub_cmd in commands if sub_cmd.startswith(key)]
+            cmd = self.get_cmd_obj(cmd_input[0])
+            suggestions = cmd.get_suggestions(cmd_input[-2])
+            suggestions = [sub_cmd for sub_cmd in suggestions if sub_cmd.startswith(cmd_input[-1])]
         
         self.update_suggestions(suggestions)
         self.update_suggestions_location(event.cursor_offset)
+        
+    def on_prompt_command_entered(self, event: Prompt.CommandEntered) -> None:
+        cmd_line = event.cmd.split(' ')
+        cmd = self.get_cmd_obj(cmd_line.pop(0))
+        res = cmd.execute(*cmd_line)
         
     def on_suggestions_focus_change(self, event: Suggestions.FocusChange) -> None:
         self.are_suggestions_focused = event.is_focused
