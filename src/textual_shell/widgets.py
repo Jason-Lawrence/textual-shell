@@ -1,54 +1,34 @@
-from typing import Annotated, List, Any
+from typing import Annotated, List
 
 from textual import events, work
 from textual.app import ComposeResult
-from textual.containers import Grid
 from textual.geometry import Offset
 from textual.reactive import reactive
 from textual.message import Message
-from textual.screen import ModalScreen
 from textual.widget import Widget
 from textual.widgets import (
-    Button,
     Input, 
     Label,
-    Markdown,
     OptionList, 
     Rule, 
     TextArea 
 )
 from textual.worker import Worker, get_current_worker
-from textual_shell.command import Command
 
-class HelpScreen(ModalScreen):
-    
-    def __init__(
-        self,
-        help_text: Annotated[str, 'THe help text to display in the modal']
-    ) -> None:
-        super().__init__()
-        self.help_text = help_text
-    
-    def compose(self) -> ComposeResult:
-        yield Grid(
-            Label('Help', id='help-label'),
-            Button('X', variant='error', id='help-close'),
-            Markdown(self.help_text, id='help-display'),
-            id='help-dialog'
-        )
-        
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        if event.button.id == 'help-close':
-            self.app.pop_screen()
-
+from .command import Command
+from .screen import HelpScreen
 
 class CommandList(Widget):
     
     def __init__(
         self, 
-        command_list: Annotated[List[str], 'List of commands for the custom shell.']
+        command_list: Annotated[List[str], 'List of commands for the custom shell.'],
+        cmd_label_id: Annotated[str, 'CSS id for the Label']='cmd-label',
+        cmd_list_id: Annotated[str, 'CSS id for the TextArea']='cmd-list'
     ) -> None:
         self.commands = command_list
+        self.cmd_label_id = cmd_label_id
+        self.cmd_list_id = cmd_list_id
         super().__init__()
     
     def on_mount(self):
@@ -56,12 +36,12 @@ class CommandList(Widget):
         ta.can_focus = False
     
     def compose(self) -> ComposeResult:
-        yield Label('Commands', id='cmd-label')
+        yield Label('Commands', id=self.cmd_label)
         yield Rule()
         yield TextArea(
             '\n'.join(self.commands),
             read_only=True, 
-            id='cmd-list'
+            id=self.cmd_list_id
         )
         
 class PromptInput(Input):
@@ -125,17 +105,28 @@ class Prompt(Widget):
             
     cmd_input = reactive('')
     
+    def __init__(
+        self, 
+        prompt: Annotated[str, 'prompt for the shell.'],
+        prompt_input_id: Annotated[str, 'The css id for the prompt input']='prompt-input',
+        prompt_label_id: Annotated[str, 'The css id for the prompt label']='prompt-label'
+    ) -> None:
+        super().__init__()
+        self.prompt = prompt
+        self.prompt_input_id = prompt_input_id
+        self.prompt_label_id = prompt_label_id
+    
     def on_mount(self) -> None:
-        prompt_input = self.query_one('#prompt-input', PromptInput)
+        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         prompt_input.focus()
         
     def compose(self) -> ComposeResult:
-        yield Label('[b]xbsr $> [/b]', id='prompt-label')
-        yield PromptInput(id='prompt-input', select_on_focus=False)
+        yield Label(f'[b]{self.prompt}[/b]', id=self.prompt_label_id)
+        yield PromptInput(id=self.prompt_input_id, select_on_focus=False)
         
     def on_input_changed(self, event: Input.Changed) -> None:
         event.stop()
-        prompt_input = self.query_one('#prompt-input', PromptInput)
+        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         self.cmd_input = event.value
         self.post_message(
             self.CommandInput(
@@ -146,7 +137,7 @@ class Prompt(Widget):
         
     def on_input_submitted(self, event: Input.Submitted) -> None:
         event.stop()
-        prompt_input = self.query_one('#prompt-input', Input)
+        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         prompt_input.value = ''
         prompt_input.action_home()
         self.post_message(self.CommandEntered(event.value))
