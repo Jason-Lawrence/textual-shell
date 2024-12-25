@@ -70,7 +70,9 @@ class PromptInput(Input):
         pass
     
     class Show(Message):
-        pass
+        def __init__(self, cursor: Offset) -> None:
+            super().__init__()
+            self.cursor_offset = cursor
     
     class Hide(Message):
         pass
@@ -102,7 +104,7 @@ class PromptInput(Input):
     def on_key(self, event: events.Key) -> None:
         if event.key == 'ctrl+@':
             event.stop()
-            self.post_message(self.Show())
+            self.post_message(self.Show(self.cursor_screen_offset))
 
 
 class Prompt(Widget):
@@ -133,7 +135,7 @@ class Prompt(Widget):
         
     def on_input_changed(self, event: Input.Changed) -> None:
         event.stop()
-        prompt_input = self.query_one('#prompt-input', Input)
+        prompt_input = self.query_one('#prompt-input', PromptInput)
         self.cmd_input = event.value
         self.post_message(
             self.CommandInput(
@@ -273,6 +275,7 @@ class Shell(Widget):
         self.is_prompt_focused = event.is_focused
         
     def on_prompt_input_show(self, event: PromptInput.Show) -> None:
+        self.update_suggestions_location(event.cursor_offset)
         self.show_suggestions = True
         
     def on_prompt_input_hide(self, event: PromptInput.Hide) -> None:
