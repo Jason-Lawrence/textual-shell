@@ -67,9 +67,13 @@ class CommandList(Widget):
 class PromptInput(Input):
     
     class AutoComplete(Message):
-        
-        def __init__(self):
-            super().__init__()
+        pass
+    
+    class Show(Message):
+        pass
+    
+    class Hide(Message):
+        pass
 
     class FocusChange(Message):
         """
@@ -90,6 +94,15 @@ class PromptInput(Input):
     def key_tab(self, event: events.Key) -> None:
         event.stop()
         self.post_message(self.AutoComplete())
+        
+    def key_escape(self, event: events.Key) -> None:
+        event.stop()
+        self.post_message(self.Hide())
+        
+    def on_key(self, event: events.Key) -> None:
+        if event.key == 'ctrl+@':
+            event.stop()
+            self.post_message(self.Show())
 
 
 class Prompt(Widget):
@@ -157,6 +170,10 @@ class Suggestions(OptionList):
     
     class Continue(Message):
         pass
+    
+    class Hide(Message):
+        """Hide the suggestions."""
+        pass
             
 
     def on_focus(self, event: events.Focus) -> None:
@@ -179,11 +196,16 @@ class Suggestions(OptionList):
         event.stop()
         self.post_message(self.Continue())
         
+    def key_escape(self, event: events.Key) -> None:
+        event.stop()
+        self.post_message(self.Hide())
+        
 
 class Shell(Widget):
     
     is_prompt_focused = reactive(True)
     are_suggestions_focused = reactive(False)
+    show_suggestions = reactive(False)
     
     def __init__(
         self,
@@ -214,7 +236,8 @@ class Shell(Widget):
     ) -> None:
         ol = self.query_one('#auto-complete', Suggestions)
         ol.clear_options()
-        ol.visible = False if len(suggestions) == 0 else True
+        if self.show_suggestions:
+            ol.visible = False if len(suggestions) == 0 else True
         ol.add_options(suggestions)
   
     def update_suggestions_location(self, cursor: Offset) -> None:
@@ -247,7 +270,13 @@ class Shell(Widget):
         prompt_input.focus()
     
     def on_prompt_input_focus_change(self, event: PromptInput.FocusChange) -> None:
-        self.is_prompt_focused = event.is_focused  
+        self.is_prompt_focused = event.is_focused
+        
+    def on_prompt_input_show(self, event: PromptInput.Show) -> None:
+        self.show_suggestions = True
+        
+    def on_prompt_input_hide(self, event: PromptInput.Hide) -> None:
+        self.show_suggestions = False
     
     # The naming scheme is important.
     def on_prompt_command_input(self, event: Prompt.CommandInput) -> None:
@@ -287,24 +316,35 @@ class Shell(Widget):
         
     def on_suggestions_focus_change(self, event: Suggestions.FocusChange) -> None:
         self.are_suggestions_focused = event.is_focused
+        
+    def on_suggestions_hide(self, event: Suggestions.Hide) -> None:
+        self.show_suggestions = False
     
     def toggle_suggestions(self, toggle: bool):
-        lv = self.query_one('#auto-complete', Suggestions)
-        lv.visible = toggle
+        ol = self.query_one('#auto-complete', Suggestions)
+        ol.visible = toggle
+        
+    def decide_to_show_suggestions(self) -> None:
+        
+        if self.show_suggestions:
+            
+            if self.is_prompt_focused or self.are_suggestions_focused:
+                self.toggle_suggestions(True)
+        
+            else:
+                self.toggle_suggestions(False)
+        
+        else:
+            self.toggle_suggestions(False)
     
     def watch_is_prompt_focused(self, is_prompt_focused: bool):
-        if self.is_prompt_focused or self.are_suggestions_focused:
-            self.toggle_suggestions(True)
-        
-        else:
-            self.toggle_suggestions(False)
+        self.decide_to_show_suggestions()
         
     def watch_are_suggestions_focused(self, are_suggestions_focused: bool):
-        if self.is_prompt_focused or self.are_suggestions_focused:
-            self.toggle_suggestions(True)
-        
-        else:
-            self.toggle_suggestions(False)
+        self.decide_to_show_suggestions()
+            
+    def watch_show_suggestions(self, show: bool):
+        self.decide_to_show_suggestions()
      
     @work(thread=True)   
     def execute_command(self, cmd: Command, *cmd_line):
