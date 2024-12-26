@@ -342,6 +342,9 @@ class Shell(Widget):
         self.are_suggestions_focused = event.is_focused
         
     def on_suggestions_hide(self, event: Suggestions.Hide) -> None:
+        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input.action_end()
+        prompt_input.focus()
         self.show_suggestions = False
     
     def toggle_suggestions(self, toggle: bool):
