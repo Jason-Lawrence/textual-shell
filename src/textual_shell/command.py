@@ -3,6 +3,8 @@ from typing import Annotated, List
 
 import rustworkx as rx
 
+from textual.screen import ModalScreen
+
 from . import configure
 from .screen import HelpScreen
 
@@ -35,7 +37,7 @@ class Command(ABC):
             raise ValueError('cmd_struct is not a PyDiGraph from rustworkx.')
         
         elif not cmd_struct:
-            self.cmd_struct = rx.PyDiGraph()
+            self.cmd_struct = rx.PyDiGraph(check_cycle=True)
         
         else:
             self.cmd_struct = cmd_struct
@@ -56,7 +58,7 @@ class Command(ABC):
         node: CommandArgument
     ) -> Annotated[bool, "True if the node's name matches the current arg else False"]:
         return self.current_arg_name == node.name
-        
+    
     def get_suggestions(
         self,
         current_arg: str
@@ -68,12 +70,40 @@ class Command(ABC):
         
         children = self.cmd_struct.neighbors(indices[0])
         return [self.cmd_struct.get_node_data(child).name for child in children]
+    
+    def gen_help_text(self, node: CommandArgument):
+        return f'**{node.name}:**\t\t {node.description}  \n'
+    
+    def recurse_graph(self, node):
+        neighbors = self.cmd_struct.neighbors(node)
+        
+        if len(neighbors) == 0:
+            return '&nbsp;&nbsp;&nbsp;&nbsp;' + self.gen_help_text(
+                self.cmd_struct.get_node_data(node)
+            ) 
+            
+        else:
+            help_text =  self.gen_help_text(
+                self.cmd_struct.get_node_data(node)
+            )
+            for neighbor in neighbors:
+                help_text += self.recurse_graph(neighbor)
+                
+            return help_text
             
     def help(self):
         """This will generate help text in a pop up in the textual app."""
-        help_text = '\n'.join([node.data for node in self.cmd_tree.all_nodes()])
-        return help_text     
-    
+        root = self.cmd_struct.get_node_data(0)
+        
+        help_text = f'### Command: {root.name}\n'
+        help_text += f'**Description:** {root.description}\n'
+        help_text += '---\n'
+        
+        for neighbor in self.cmd_struct.neighbors(0):
+            help_text += self.recurse_graph(neighbor)
+        
+        return help_text
+        
     @abstractmethod
     def execute(self):
         pass
@@ -93,14 +123,15 @@ class Help(Command):
         
     def help(self):
         """"""
-        root = self.cmd_tree.get_node(self.name)
-        help_text = f"""
-            ### Command: {self.name}
-            **Description:** {root.data.description}
-        """
+        root = self.cmd_struct.get_node_data(0)
+        help_text = f'### Command: {root.name}\n'
+        help_text += f'**Description:** {root.description}'
         return help_text
     
-    def execute(self, cmd: Command):
+    def execute(
+        self,
+        cmd: Command
+    ) -> Annotated[ModalScreen, 'A help screen to show as a modal.']:
         help_text = cmd.help()
         return HelpScreen(help_text)
     
@@ -149,7 +180,7 @@ class Set(Command):
     ) -> int:
         configure.update_setting(section, setting, value)
         return 0
-        
+    
     def execute(self, *args) -> int:
         return self.update_settings(*args)
 
