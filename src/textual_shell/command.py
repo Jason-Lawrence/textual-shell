@@ -8,7 +8,6 @@ from . import configure
 from .screen import HelpScreen
 
 
-
 class CommandArgument:
     
     def __init__(
