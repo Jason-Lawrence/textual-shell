@@ -16,7 +16,6 @@ from textual.widgets import (
 from textual.worker import Worker, get_current_worker
 
 from .command import Command
-from .screen import HelpScreen
 
 class CommandList(Widget):
     
@@ -32,11 +31,11 @@ class CommandList(Widget):
         super().__init__()
     
     def on_mount(self):
-        ta = self.query_one('#cmd-list', TextArea)
+        ta = self.query_one(f'#{self.cmd_list_id}', TextArea)
         ta.can_focus = False
     
     def compose(self) -> ComposeResult:
-        yield Label('Commands', id=self.cmd_label)
+        yield Label('Commands', id=self.cmd_label_id)
         yield Rule()
         yield TextArea(
             '\n'.join(self.commands),
@@ -50,9 +49,9 @@ class PromptInput(Input):
         pass
     
     class Show(Message):
-        def __init__(self, cursor: Offset) -> None:
+        def __init__(self, cursor: int) -> None:
             super().__init__()
-            self.cursor_offset = cursor
+            self.cursor_position = cursor
     
     class Hide(Message):
         pass
@@ -84,17 +83,17 @@ class PromptInput(Input):
     def on_key(self, event: events.Key) -> None:
         if event.key == 'ctrl+@':
             event.stop()
-            self.post_message(self.Show(self.cursor_screen_offset))
+            self.post_message(self.Show(self.cursor_position))
 
 
 class Prompt(Widget):
     
     class CommandInput(Message):
         """User Typed into the shell."""
-        def __init__(self, cmd_input: str, offset: Offset) -> None:
+        def __init__(self, cmd_input: str, position: int) -> None:
             super().__init__()
             self.cmd_input = cmd_input
-            self.cursor_offset = offset
+            self.cursor_position = position
             
     
     class CommandEntered(Message):
@@ -108,8 +107,8 @@ class Prompt(Widget):
     def __init__(
         self, 
         prompt: Annotated[str, 'prompt for the shell.'],
-        prompt_input_id: Annotated[str, 'The css id for the prompt input']='prompt-input',
-        prompt_label_id: Annotated[str, 'The css id for the prompt label']='prompt-label'
+        prompt_input_id: Annotated[str, 'The css id for the prompt input'],
+        prompt_label_id: Annotated[str, 'The css id for the prompt label']
     ) -> None:
         super().__init__()
         self.prompt = prompt
@@ -131,7 +130,7 @@ class Prompt(Widget):
         self.post_message(
             self.CommandInput(
                 self.cmd_input,
-                prompt_input.cursor_screen_offset
+                prompt_input.cursor_position
             )
         )
         
@@ -202,19 +201,34 @@ class Shell(Widget):
     
     def __init__(
         self,
-        commands: Annotated[List[Command], 'List of Shell Commands']
+        commands: Annotated[List[Command], 'List of Shell Commands'],
+        prompt: Annotated[str, 'prompt for the shell.'],
+        prompt_input_id: Annotated[str, 'The css id for the prompt input']='prompt-input',
+        prompt_label_id: Annotated[str, 'The css id for the prompt label']='prompt-label',
+        suggestion_id: Annotated[str, 'The css id for the suggestions']='auto-complete',
+        suggestion_offset: Annotated[Offset, 'The Offset to draw the suggestions from the shell input']=Offset(0, 4)
     ) -> None:
         super().__init__()
         self.commands = commands
         self.command_list = [cmd.name for cmd in self.commands]
+        self.prompt = prompt
+        self.prompt_input_id = prompt_input_id
+        self.prompt_label_id = prompt_label_id
+        self.suggestion_id = suggestion_id
+        self.suggestion_offset = suggestion_offset
     
     def on_mount(self):
+        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        self.prompt_input_offset = prompt_input.offset
         self.update_suggestions(self.command_list)
         
     def compose(self) -> ComposeResult:
-        yield CommandList(self.command_list)
-        yield Prompt()
-        yield Suggestions(id='auto-complete')
+        yield Prompt(
+            prompt=self.prompt,
+            prompt_input_id=self.prompt_input_id,
+            prompt_label_id=self.prompt_label_id
+        )
+        yield Suggestions(id=self.suggestion_id)
         
     def get_cmd_obj(self, cmd) -> Command:
         for command in self.commands:
@@ -227,25 +241,28 @@ class Shell(Widget):
         self,
         suggestions: Annotated[List[str], 'suggestions for the ListView.']
     ) -> None:
-        ol = self.query_one('#auto-complete', Suggestions)
+        ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
         ol.clear_options()
         if self.show_suggestions:
             ol.visible = False if len(suggestions) == 0 else True
         ol.add_options(suggestions)
   
-    def update_suggestions_location(self, cursor: Offset) -> None:
-        ol = self.query_one('#auto-complete', Suggestions)
-        ol.styles.offset = (cursor.x, cursor.y)
+    def update_suggestions_location(self, cursor: int) -> None:
+        ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
+        ol.styles.offset = (
+            self.prompt_input_offset.x + cursor + self.suggestion_offset.x,
+            self.prompt_input_offset.y + self.suggestion_offset.y
+        )
         
     def update_prompt_input(self, suggestion: str) -> None:
-        prompt_input = self.query_one('#prompt-input', PromptInput)
+        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         with prompt_input.prevent(Input.Changed):
             cmd_split = prompt_input.value.split(' ')
             cmd_split[-1] = suggestion
             prompt_input.value = ' '.join(cmd_split)
         
     def on_prompt_input_auto_complete(self, event: PromptInput.AutoComplete) -> None:
-        ol = self.query_one('#auto-complete', Suggestions)
+        ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
         ol.focus()
         if not ol.highlighted:
             ol.highlighted = 0
@@ -257,7 +274,7 @@ class Shell(Widget):
         self.update_prompt_input(event.next)
         
     def on_suggestions_continue(self, event: Suggestions.Continue) -> None:
-        prompt_input = self.query_one('#prompt-input', PromptInput)
+        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         prompt_input.value += ' '
         prompt_input.action_end()
         prompt_input.focus()
@@ -266,7 +283,7 @@ class Shell(Widget):
         self.is_prompt_focused = event.is_focused
         
     def on_prompt_input_show(self, event: PromptInput.Show) -> None:
-        self.update_suggestions_location(event.cursor_offset)
+        self.update_suggestions_location(event.cursor_position)
         self.show_suggestions = True
         
     def on_prompt_input_hide(self, event: PromptInput.Hide) -> None:
@@ -298,7 +315,7 @@ class Shell(Widget):
             suggestions = [sub_cmd for sub_cmd in suggestions if sub_cmd.startswith(cmd_input[-1])]
         
         self.update_suggestions(suggestions)
-        self.update_suggestions_location(event.cursor_offset)
+        self.update_suggestions_location(event.cursor_position)
         
     def on_prompt_command_entered(self, event: Prompt.CommandEntered) -> None:
         cmd_line = event.cmd.split(' ')
@@ -307,8 +324,8 @@ class Shell(Widget):
             
             if cmd.name == 'help':
                 if show_help := self.get_cmd_obj(cmd_line[0]):
-                    res = cmd.execute(show_help)
-                    self.app.push_screen(HelpScreen(res))
+                    help_screen = cmd.execute(show_help)
+                    self.app.push_screen(help_screen)
                     
             else:
                 self.execute_command(cmd, *cmd_line)
@@ -328,7 +345,7 @@ class Shell(Widget):
         self.show_suggestions = False
     
     def toggle_suggestions(self, toggle: bool):
-        ol = self.query_one('#auto-complete', Suggestions)
+        ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
         ol.visible = toggle
         
     def decide_to_show_suggestions(self) -> None:

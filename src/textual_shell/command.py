@@ -5,6 +5,8 @@ import treelib
 import treelib.exceptions
 
 from . import configure
+from .screen import HelpScreen
+
 
 
 class CommandArgument:
@@ -73,8 +75,6 @@ class Command(ABC):
     def execute(self):
         pass
     
-
-    
     
 class Help(Command):
     """
@@ -98,7 +98,8 @@ class Help(Command):
         return help_text
     
     def execute(self, cmd: Command):
-        return cmd.help()
+        help_text = cmd.help()
+        return HelpScreen(help_text)
     
 
 class Set(Command):
