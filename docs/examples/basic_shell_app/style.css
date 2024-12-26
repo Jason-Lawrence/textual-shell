@@ -1,5 +1,6 @@
 Screen {
     layers: shell popup;
+    layout: horizontal;
 }
 
 #prompt-input {
