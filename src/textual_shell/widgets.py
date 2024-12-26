@@ -1,6 +1,6 @@
 from typing import Annotated, List
 
-from textual import events, work
+from textual import events, work, log
 from textual.app import ComposeResult
 from textual.geometry import Offset
 from textual.reactive import reactive
@@ -176,6 +176,9 @@ class Suggestions(OptionList):
         
     def key_tab(self, event: events.Key) -> None:
         event.stop()
+        if self.option_count == 0:
+            return 
+        
         next = self.highlighted + 1
         if next >= self.option_count:
             next = 0
@@ -263,10 +266,13 @@ class Shell(Widget):
         
     def on_prompt_input_auto_complete(self, event: PromptInput.AutoComplete) -> None:
         ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
-        ol.focus()
+        if ol.option_count == 0 or not ol.visible:
+            return
+        
         if not ol.highlighted:
             ol.highlighted = 0
-            
+        
+        ol.focus()
         suggestion = ol.get_option_at_index(ol.highlighted).prompt
         self.update_prompt_input(suggestion)
         
@@ -277,6 +283,8 @@ class Shell(Widget):
         prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         prompt_input.value += ' '
         prompt_input.action_end()
+        self.get_suggestions(prompt_input.value)
+        self.update_suggestions_location(prompt_input.cursor_position)
         prompt_input.focus()
     
     def on_prompt_input_focus_change(self, event: PromptInput.FocusChange) -> None:
@@ -289,9 +297,8 @@ class Shell(Widget):
     def on_prompt_input_hide(self, event: PromptInput.Hide) -> None:
         self.show_suggestions = False
     
-    # The naming scheme is important.
-    def on_prompt_command_input(self, event: Prompt.CommandInput) -> None:
-        cmd_input = event.cmd_input.split(' ')
+    def get_suggestions(self, cmd_line) -> None:
+        cmd_input = cmd_line.split(' ')
         if len(cmd_input) == 1:
             val = cmd_input[0]
             suggestions = ([cmd for cmd in self.command_list if cmd.startswith(val)] 
@@ -313,8 +320,12 @@ class Shell(Widget):
                     suggestions = []
             
             suggestions = [sub_cmd for sub_cmd in suggestions if sub_cmd.startswith(cmd_input[-1])]
+            log(f'Suggestions: {suggestions}\t{len(suggestions)}')
         
         self.update_suggestions(suggestions)
+    
+    def on_prompt_command_input(self, event: Prompt.CommandInput) -> None:
+        self.get_suggestions(event.cmd_input)
         self.update_suggestions_location(event.cursor_position)
         
     def on_prompt_command_entered(self, event: Prompt.CommandEntered) -> None:
@@ -326,6 +337,14 @@ class Shell(Widget):
                 if show_help := self.get_cmd_obj(cmd_line[0]):
                     help_screen = cmd.execute(show_help)
                     self.app.push_screen(help_screen)
+                    
+                else:
+                    self.notify(
+                        f'[b]Command:[/b] {cmd_name} does not exist!',
+                        severity='error',
+                        title='Invalid Command',
+                        timeout=5
+                    )
                     
             else:
                 self.execute_command(cmd, *cmd_line)
