@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Annotated, List
 
-import treelib
-import treelib.exceptions
+import rustworkx as rx
 
 from . import configure
 from .screen import HelpScreen
@@ -29,41 +28,46 @@ class Command(ABC):
             
     def __init__(
         self,
-        cmd_tree: Annotated[treelib.Tree, 'The command line structure']=None,
+        cmd_struct: Annotated[rx.PyDiGraph, 'The command line structure']=None,
     ) -> None:
         self.name = self.__class__.__name__.lower()
-        if cmd_tree and not isinstance(cmd_tree, treelib.Tree):
-            raise ValueError('cmd_tree is not a Tree from treelib.')
+        if cmd_struct and not isinstance(cmd_struct, rx.PyDiGraph):
+            raise ValueError('cmd_struct is not a PyDiGraph from rustworkx.')
         
-        elif not cmd_tree:
-            self.cmd_tree = treelib.Tree()
+        elif not cmd_struct:
+            self.cmd_struct = rx.PyDiGraph()
         
         else:
-            self.cmd_tree = cmd_tree
+            self.cmd_struct = cmd_struct
             
-    def add_argument_to_cmd_tree(
+    def add_argument_to_cmd_struct(
         self, 
         arg: CommandArgument,
-        parent: str=None
-    ) -> None:
-        self.cmd_tree.create_node(
-            tag=arg.name.capitalize(),
-            identifier=arg.name,
-            parent=parent,
-            data=arg
-        )
+        parent: int=None
+    ) -> int:
+        if parent is None:
+            return self.cmd_struct.add_node(arg)
+            
+        else:
+            return self.cmd_struct.add_child(parent, arg, None)
+        
+    def match_arg_name(
+        self,
+        node: CommandArgument
+    ) -> Annotated[bool, "True if the node's name matches the current arg else False"]:
+        return self.current_arg_name == node.name
         
     def get_suggestions(
         self,
         current_arg: str
     ) -> Annotated[List[str], 'A list of possible next values']:
-        try:
-            children_nodes = self.cmd_tree.children(current_arg)
+        self.current_arg_name = current_arg
+        indices = self.cmd_struct.filter_nodes(self.match_arg_name)
+        if len(indices) == 0:
+            return []
         
-        except treelib.exceptions.NodeIDAbsentError as error:
-            children_nodes = []
-        
-        return [child.data.name for child in children_nodes]
+        children = self.cmd_struct.neighbors(indices[0])
+        return [self.cmd_struct.get_node_data(child).name for child in children]
             
     def help(self):
         """This will generate help text in a pop up in the textual app."""
@@ -85,7 +89,7 @@ class Help(Command):
     def __init__(self) -> None:
         super().__init__()
         arg = CommandArgument('help', 'Show help for commands')
-        self.add_argument_to_cmd_tree(arg)
+        self.add_argument_to_cmd_struct(arg)
         
     def help(self):
         """"""
@@ -111,39 +115,31 @@ class Set(Command):
     def __init__(self) -> None:
         super().__init__()
         arg = CommandArgument('set', 'Set new shell variables.')
-        self.add_argument_to_cmd_tree(arg)
-        self._load_sections_into_tree()
+        root_index = self.add_argument_to_cmd_struct(arg)
+        self._load_sections_into_struct(root_index)
         
-    def _load_sections_into_tree(self) -> None:
+    def _load_sections_into_struct(self, root_index) -> None:
         data = configure.get_config()
         for section in data:
-            self._add_section_to_tree(section, data[section]['description'])
+            parent = self._add_section_to_struct(section, data[section]['description'], parent=root_index)
             for setting in data[section]:
                 if setting == 'description':
                     continue
                 
-                self._add_setting_to_tree(
-                    section,
+                self._add_section_to_struct(
                     setting,
-                    data[section][setting]['description']
+                    data[section][setting]['description'],
+                    parent
                 )
             
-    def _add_setting_to_tree(
+    def _add_section_to_struct(
         self,
         section: Annotated[str, 'Section name'],
-        setting: Annotated[str, 'Setting name'],
-        description: Annotated[str, 'Description of the section']=None
-    ) -> None:
-        arg = CommandArgument(setting, description)
-        self.add_argument_to_cmd_tree(arg, parent=section)
-            
-    def _add_section_to_tree(
-        self,
-        section: Annotated[str, 'Section name'],
-        description: Annotated[str, 'Description of the section']=None
+        description: Annotated[str, 'Description of the section']=None,
+        parent: Annotated[int, 'Index of the parent']=0
     ) -> None:
         arg = CommandArgument(section, description)
-        self.add_argument_to_cmd_tree(arg, parent='set')
+        return self.add_argument_to_cmd_struct(arg, parent=parent)
     
     def update_settings(
         self, 
