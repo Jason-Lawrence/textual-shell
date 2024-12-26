@@ -1,3 +1,4 @@
+import os
 from abc import ABC, abstractmethod
 from typing import Annotated, List
 
@@ -143,14 +144,24 @@ class Set(Command):
     Examples:
         set <section> <setting> <value> # sets the variable in the section to the value.
     """
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        config_path: Annotated[str, "Path to the config. Defaults to user's home directory first else cwd"]=None
+    ) -> None:
         super().__init__()
+        if config_path:
+            self.config_path = config_path
+        
+        else:
+            config_dir = os.environ.get('HOME', os.getcwd())
+            self.config_path = os.path.join(config_dir, '.config.yaml')
+            
         arg = CommandArgument('set', 'Set new shell variables.')
         root_index = self.add_argument_to_cmd_struct(arg)
         self._load_sections_into_struct(root_index)
         
     def _load_sections_into_struct(self, root_index) -> None:
-        data = configure.get_config()
+        data = configure.get_config(self.config_path)
         for section in data:
             parent = self._add_section_to_struct(section, data[section]['description'], parent=root_index)
             for setting in data[section]:
@@ -178,7 +189,7 @@ class Set(Command):
         setting: Annotated[str, 'Setting name'],
         value: Annotated[str, 'Default value']=None
     ) -> int:
-        configure.update_setting(section, setting, value)
+        configure.update_setting(section, setting, self.config_path, value)
         return 0
     
     def execute(self, *args) -> int:

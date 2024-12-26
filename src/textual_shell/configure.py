@@ -3,18 +3,16 @@ from typing import Annotated
 
 import yaml
 
-HOME_DIR = os.environ.get('HOME')
-PATH = os.path.join(HOME_DIR, '.config.yaml')
 
 def create_config(
-    path: Annotated[str, 'The path to create the config file.']=PATH
+    path: Annotated[str, 'The path to create the config file.']
 ) -> None:
     if not os.path.exists(path):
         with open(path, 'w') as config_file:
             yaml.dump({}, config_file)
 
 def get_config(
-    path: Annotated[str, 'The path to create the config file.']=PATH
+    path: Annotated[str, 'The path to create the config file.']
 ) -> dict:
     if not os.path.exists(path):
         create_config(path)
@@ -25,14 +23,14 @@ def get_config(
 def get_setting(
     section: Annotated[str, 'The section of the config.'],
     setting: Annotated[str, 'The setting to get.'],
-    path: Annotated[str, 'The path to create the config file.']=PATH
+    path: Annotated[str, 'The path to create the config file.']
 ) -> Annotated[str | None, 'The value if it exists else None.']:
     config = get_config(path)
     return config.get(section, {}).get(setting, None)
 
 def add_section(
     section: Annotated[str, 'Section Name'],
-    path: Annotated[str, 'The path to create the config file.']=PATH
+    path: Annotated[str, 'The path to create the config file.']
 ):
     config = get_config(path)
     if section not in config:
@@ -44,8 +42,8 @@ def add_section(
 def update_setting(
     section: Annotated[str, 'The section of the config.'],
     setting: Annotated[str, 'The setting to update.'],
+    path: Annotated[str, 'The path to create the config file.'],
     value: Annotated[str, 'The new value']=None,
-    path: Annotated[str, 'The path to create the config file.']=PATH
 ) -> None:
     config = get_config(path)
     if section not in config:
