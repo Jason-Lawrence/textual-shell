@@ -265,6 +265,7 @@ class Shell(Widget):
             prompt_input.value = ' '.join(cmd_split)
         
     def on_prompt_input_auto_complete(self, event: PromptInput.AutoComplete) -> None:
+        event.stop()
         ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
         if ol.option_count == 0 or not ol.visible:
             return
@@ -277,24 +278,27 @@ class Shell(Widget):
         self.update_prompt_input(suggestion)
         
     def on_suggestions_cycle(self, event: Suggestions.Cycle) -> None:
+        event.stop()
         self.update_prompt_input(event.next)
         
     def on_suggestions_continue(self, event: Suggestions.Continue) -> None:
+        event.stop()
         prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         prompt_input.value += ' '
         prompt_input.action_end()
-        self.get_suggestions(prompt_input.value)
-        self.update_suggestions_location(prompt_input.cursor_position)
         prompt_input.focus()
     
     def on_prompt_input_focus_change(self, event: PromptInput.FocusChange) -> None:
+        event.stop()
         self.is_prompt_focused = event.is_focused
         
     def on_prompt_input_show(self, event: PromptInput.Show) -> None:
+        event.stop()
         self.update_suggestions_location(event.cursor_position)
         self.show_suggestions = True
         
     def on_prompt_input_hide(self, event: PromptInput.Hide) -> None:
+        event.stop()
         self.show_suggestions = False
     
     def get_suggestions(self, cmd_line) -> None:
@@ -320,15 +324,16 @@ class Shell(Widget):
                     suggestions = []
             
             suggestions = [sub_cmd for sub_cmd in suggestions if sub_cmd.startswith(cmd_input[-1])]
-            log(f'Suggestions: {suggestions}\t{len(suggestions)}')
         
         self.update_suggestions(suggestions)
     
     def on_prompt_command_input(self, event: Prompt.CommandInput) -> None:
+        event.stop()
         self.get_suggestions(event.cmd_input)
         self.update_suggestions_location(event.cursor_position)
         
     def on_prompt_command_entered(self, event: Prompt.CommandEntered) -> None:
+        event.stop()
         cmd_line = event.cmd.split(' ')
         cmd_name = cmd_line.pop(0)
         if cmd := self.get_cmd_obj(cmd_name):
@@ -358,9 +363,11 @@ class Shell(Widget):
             )
         
     def on_suggestions_focus_change(self, event: Suggestions.FocusChange) -> None:
+        event.stop()
         self.are_suggestions_focused = event.is_focused
         
     def on_suggestions_hide(self, event: Suggestions.Hide) -> None:
+        event.stop()
         prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         prompt_input.action_end()
         prompt_input.focus()
@@ -368,7 +375,11 @@ class Shell(Widget):
     
     def toggle_suggestions(self, toggle: bool):
         ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
-        ol.visible = toggle
+        if not toggle:
+            ol.visible = toggle
+            
+        if ol.option_count > 0:
+            ol.visible = toggle
         
     def decide_to_show_suggestions(self) -> None:
         
