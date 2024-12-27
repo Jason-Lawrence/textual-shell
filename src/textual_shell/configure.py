@@ -18,7 +18,24 @@ def get_config(
         create_config(path)
         
     with open(path, 'r') as config_file:
-        return yaml.safe_load(config_file) or {}    
+        return yaml.safe_load(config_file) or {}
+    
+def get_setting_value(
+    section: Annotated[str, 'The section of the config.'],
+    setting: Annotated[str, 'The setting to get.'],
+    path: Annotated[str, 'The path to create the config file.']
+) -> str:
+    setting = get_setting(section, setting, path)
+    return setting.get('value')
+
+def get_setting_description(
+    section: Annotated[str, 'The section of the config.'],
+    setting: Annotated[str, 'The setting to get.'],
+    path: Annotated[str, 'The path to create the config file.']
+) -> str:
+    setting = get_setting(section, setting, path)
+    return setting.get('description')
+      
 
 def get_setting(
     section: Annotated[str, 'The section of the config.'],
