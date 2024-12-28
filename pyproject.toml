@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "textual-shell"
-version = "0.7.1"
+version = "0.7.5"
 license = {file = "LICENSE"}
 authors = [
     { name="Jason Lawrence", email="thejasonlawrence1@gmail.com" },
 ]
 description = "A shell widget for textual."
-readme = "README.md"
+readme = "docs/index.md"
 requires-python = ">=3.8"
 dependencies = [
     "textual>=1.0.0",
