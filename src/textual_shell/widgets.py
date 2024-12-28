@@ -209,9 +209,10 @@ class Shell(Widget):
         prompt_input_id: Annotated[str, 'The css id for the prompt input']='prompt-input',
         prompt_label_id: Annotated[str, 'The css id for the prompt label']='prompt-label',
         suggestion_id: Annotated[str, 'The css id for the suggestions']='auto-complete',
-        suggestion_offset: Annotated[Offset, 'The Offset to draw the suggestions from the shell input']=Offset(0, 4)
+        suggestion_offset: Annotated[Offset, 'The Offset to draw the suggestions from the shell input']=Offset(0, 4),
+        *args, **kwargs
     ) -> None:
-        super().__init__()
+        super().__init__(*args, **kwargs)
         self.commands = commands
         self.command_list = [cmd.name for cmd in self.commands]
         self.prompt = prompt
@@ -219,6 +220,9 @@ class Shell(Widget):
         self.prompt_label_id = prompt_label_id
         self.suggestion_id = suggestion_id
         self.suggestion_offset = suggestion_offset
+        
+        for cmd in self.commands:
+            cmd.widget = self
     
     def on_mount(self):
         prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
