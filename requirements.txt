@@ -1,3 +1,4 @@
+mkdocs-material
 aiohappyeyeballs==2.4.4
 aiohttp==3.11.11
 aiohttp-jinja2==1.6
