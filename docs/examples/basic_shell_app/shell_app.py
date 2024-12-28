@@ -1,4 +1,3 @@
-
 from textual.app import App, ComposeResult
 from textual.geometry import Offset
 from textual.widgets import Header, Footer
