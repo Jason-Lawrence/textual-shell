@@ -2,11 +2,13 @@ from typing import Annotated, List
 
 from textual import events, work, log
 from textual.app import ComposeResult
+from textual.containers import Grid
 from textual.geometry import Offset
 from textual.reactive import reactive
 from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import (
+    DataTable,
     Input, 
     Label,
     OptionList, 
@@ -15,6 +17,7 @@ from textual.widgets import (
 )
 from textual.worker import Worker, get_current_worker
 
+from . import configure
 from .command import Command
 
 class CommandList(Widget):
@@ -195,6 +198,40 @@ class Suggestions(OptionList):
         event.stop()
         self.post_message(self.Hide())
         
+        
+class SettingsDisplay(Widget):
+    
+    def __init__(
+        self,
+        config_path: Annotated[str, 'THe path to the config file.']=None,
+        settings_label_id: Annotated[str, 'The css id for the settings label']='settings-label',
+        *args, **kwargs
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.config_path = config_path
+        self.settings_label_id = settings_label_id
+        
+    def on_mount(self) -> None:
+        table = self.query_one(DataTable)
+        table.can_focus = False
+        self.column_keys = table.add_columns('setting', 'value')
+        config = configure.get_config(self.config_path)
+        for section in config:
+            for key, val in config[section].items():
+                if key == 'description':
+                    continue
+                
+                setting = f'{section}.{key}'
+                value = val['value']
+                row = (setting, value)
+                table.add_row(*row, key=setting)
+                
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label('Settings', id=self.settings_label_id),
+            DataTable()            
+        )
+
 
 class Shell(Widget):
     

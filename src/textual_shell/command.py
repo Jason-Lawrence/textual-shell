@@ -247,7 +247,7 @@ class Set(Command):
         set <section> <setting> <value> # sets the variable in the section to the value.
     """
     
-    class SettingsChange(Message):
+    class SettingsChanged(Message):
         """
         Event for when a setting has been changed.
         
@@ -263,6 +263,7 @@ class Set(Command):
             setting_name: Annotated[str, 'The name of the setting that was changed.'],
             value: Annotated[str, 'The value the setting was set to.']
         ) -> None:
+            super().__init__()
             self.section_name = section_name
             self.setting_name = setting_name
             self.value = value
@@ -357,7 +358,7 @@ class Set(Command):
             value (str): The value the setting was set to.
         """
         self.widget.post_message(
-            self.SettingsChange(
+            self.SettingsChanged(
                 section_name,
                 setting_name,
                 value
@@ -365,5 +366,6 @@ class Set(Command):
         )
     
     def execute(self, *args) -> int:
-        self.settings_changed(*args)
         self.update_settings(*args)
+        self.settings_changed(*args)
+        
