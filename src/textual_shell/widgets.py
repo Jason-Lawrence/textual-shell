@@ -2,6 +2,7 @@ from typing import Annotated, List
 
 from textual import events, work, log
 from textual.app import ComposeResult
+from textual.binding import Binding
 from textual.containers import Grid
 from textual.geometry import Offset
 from textual.reactive import reactive
@@ -143,7 +144,7 @@ class Prompt(Widget):
         prompt_input.value = ''
         prompt_input.action_home()
         self.post_message(self.CommandEntered(event.value))
-        
+    
 
 class Suggestions(OptionList):
     
@@ -239,6 +240,12 @@ class Shell(Widget):
     are_suggestions_focused = reactive(False)
     show_suggestions = reactive(False)
     
+    BINDINGS = [
+        Binding('up', 'up_history', 'Cycle up through the history'),
+        Binding('down', 'down_history', 'Cycle down through the history'),
+        Binding('ctrl+c', 'clear_prompt', 'Clear the input prompt', priority=True)
+    ]
+    
     def __init__(
         self,
         commands: Annotated[List[Command], 'List of Shell Commands'],
@@ -247,6 +254,7 @@ class Shell(Widget):
         prompt_label_id: Annotated[str, 'The css id for the prompt label']='prompt-label',
         suggestion_id: Annotated[str, 'The css id for the suggestions']='auto-complete',
         suggestion_offset: Annotated[Offset, 'The Offset to draw the suggestions from the shell input']=Offset(0, 4),
+        history_log: Annotated[str, 'The path to write the history log too.']=None,
         *args, **kwargs
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -257,6 +265,8 @@ class Shell(Widget):
         self.prompt_label_id = prompt_label_id
         self.suggestion_id = suggestion_id
         self.suggestion_offset = suggestion_offset
+        self.history_list = []
+        self.current_history_index = None
         
         for cmd in self.commands:
             cmd.widget = self
@@ -267,6 +277,7 @@ class Shell(Widget):
         self.update_suggestions(self.command_list)
         
     def compose(self) -> ComposeResult:
+        
         yield Prompt(
             prompt=self.prompt,
             prompt_input_id=self.prompt_input_id,
@@ -375,6 +386,12 @@ class Shell(Widget):
         
     def on_prompt_command_entered(self, event: Prompt.CommandEntered) -> None:
         event.stop()
+        if len(event.cmd.strip(' ')) == 0:
+            return
+        
+        self.history_list.append(event.cmd)
+        self.current_history_index = None
+        
         cmd_line = event.cmd.split(' ')
         cmd_name = cmd_line.pop(0)
         if cmd := self.get_cmd_obj(cmd_name):
@@ -435,15 +452,59 @@ class Shell(Widget):
         else:
             self.toggle_suggestions(False)
     
-    def watch_is_prompt_focused(self, is_prompt_focused: bool):
+    def watch_is_prompt_focused(self, is_prompt_focused: bool) -> None:
         self.decide_to_show_suggestions()
         
-    def watch_are_suggestions_focused(self, are_suggestions_focused: bool):
+    def watch_are_suggestions_focused(self, are_suggestions_focused: bool) -> None:
         self.decide_to_show_suggestions()
             
-    def watch_show_suggestions(self, show: bool):
+    def watch_show_suggestions(self, show: bool) -> None:
         self.decide_to_show_suggestions()
-     
+        
+    def action_clear_prompt(self) -> None:
+        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input.value = ''
+        prompt_input.action_home()
+        self.current_history_index = None
+        
+    def action_up_history(self):
+        if len(self.history_list) == 0:
+            return
+        
+        if self.current_history_index is None:
+            self.current_history_index = 0
+        
+        elif self.current_history_index == len(self.history_list) - 1:
+            return
+        
+        else:
+            self.current_history_index += 1
+        
+        previous_cmd = self.history_list[self.current_history_index]
+        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input.value = previous_cmd
+        prompt_input.action_end()
+    
+    def action_down_history(self):
+        if len(self.history_list) == 0:
+            return
+        
+        if self.current_history_index == 0:
+            self.current_history_index = None
+            self.action_clear_prompt()
+            return
+        
+        elif self.current_history_index is None:
+            return
+        
+        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        self.current_history_index -= 1
+        previous_cmd = self.history_list[self.current_history_index]
+        prompt_input.value = previous_cmd
+        prompt_input.action_end()
+        
+            
+    
     @work(thread=True)   
     def execute_command(self, cmd: Command, *cmd_line):
         worker = get_current_worker()
