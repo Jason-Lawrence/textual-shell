@@ -170,14 +170,25 @@ class Suggestions(OptionList):
     class Hide(Message):
         """Hide the suggestions."""
         pass
-            
+    
+    class Cancel(Message):
+        pass
+    
+    
+    BINDINGS = [
+        Binding('backspace', 'cancel_completion', 'Cancel Autocompletion', show=False)   
+    ]    
 
     def on_focus(self, event: events.Focus) -> None:
         self.post_message(self.FocusChange(True))
     
     def on_blur(self, event: events.Blur) -> None:
         self.post_message(self.FocusChange(False))
-        
+      
+    def action_cancel_completion(self) -> None:
+        self.highlighted = None
+        self.post_message(self.Cancel())
+      
     def key_tab(self, event: events.Key) -> None:
         event.stop()
         if self.option_count == 0:
@@ -389,14 +400,15 @@ class Shell(Widget):
         if len(event.cmd.strip(' ')) == 0:
             return
         
-        self.history_list.append(event.cmd)
-        self.current_history_index = None
-        
         cmd_line = event.cmd.split(' ')
         cmd_name = cmd_line.pop(0)
+            
         if cmd := self.get_cmd_obj(cmd_name):
             
             if cmd.name == 'help':
+                if len(cmd_line) == 0:
+                    return
+                
                 if show_help := self.get_cmd_obj(cmd_line[0]):
                     help_screen = cmd.execute(show_help)
                     self.app.push_screen(help_screen)
@@ -419,6 +431,10 @@ class Shell(Widget):
                 title='Invalid Command',
                 timeout=5
             )
+            return
+        
+        self.history_list.append(event.cmd)
+        self.current_history_index = None
         
     def on_suggestions_focus_change(self, event: Suggestions.FocusChange) -> None:
         event.stop()
@@ -430,6 +446,21 @@ class Shell(Widget):
         prompt_input.action_end()
         prompt_input.focus()
         self.show_suggestions = False
+        
+    def on_suggestions_cancel(self, event: Suggestions.Cancel) -> None:
+        event.stop()
+        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        
+        cmd_line = prompt_input.value.split(' ')
+        cmd_line.pop(-1)
+        prompt_input.value = " ".join(cmd_line)
+        
+        if len(prompt_input.value) > 0:
+            prompt_input.value += ' '
+            
+        prompt_input.action_end()
+        prompt_input.focus()
+        
     
     def toggle_suggestions(self, toggle: bool):
         ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
@@ -503,8 +534,6 @@ class Shell(Widget):
         prompt_input.value = previous_cmd
         prompt_input.action_end()
         
-            
-    
     @work(thread=True)   
     def execute_command(self, cmd: Command, *cmd_line):
         worker = get_current_worker()
