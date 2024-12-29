@@ -17,6 +17,7 @@ class BasicShell(ShellApp):
     cmd_list = [Help(), Set()]
     command_names = [cmd.name for cmd in cmd_list]
     CONFIG_PATH = os.path.join(os.environ.get('HOME', os.getcwd()), '.config.yaml')
+    HISTORY_LOG = os.path.join(os.environ.get('HOME', os.getcwd()), '.shell_history.log')
     
     def compose(self) -> ComposeResult:
         yield Header()
