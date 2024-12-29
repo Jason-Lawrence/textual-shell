@@ -10,7 +10,7 @@ authors = [
     { name="Jason Lawrence", email="thejasonlawrence1@gmail.com" },
 ]
 description = "A shell widget for textual."
-readme = "docs/index.md"
+readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "textual>=1.0.0",
