@@ -23,4 +23,3 @@ pip install textual-shell
 * write documentation on Commands
 * write documentation on shell key binds
 * Add command history log
-* add backspace to suggestions.
