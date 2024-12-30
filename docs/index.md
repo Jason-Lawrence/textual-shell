@@ -22,4 +22,3 @@ pip install textual-shell
 * Command line validation
 * write documentation on Commands
 * write documentation on shell key binds
-* Add command history log

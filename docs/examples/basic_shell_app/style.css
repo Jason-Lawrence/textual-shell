@@ -6,20 +6,19 @@ Screen {
     border: none;
     background: transparent;
     margin-left: 0;
-    margin-top:1;
     padding-left: 0;
 }
 
 #prompt-label{
-    margin-top: 1;
     padding: 0;
     padding-left: 1;
+
 }
 
 Prompt {
     margin: 0;
-    padding-top: 2;
-    height: 4;
+    padding-top: 0;
+    height: 1;
     layout: horizontal
 }
 
@@ -62,7 +61,10 @@ Shell Container {
 
 Shell Container RichLog {
     height: auto;
-    max-height: 30;
+    max-height: 10;
+    padding-top: 0;
+    padding-left: 1;
+    padding-bottom: 0;
     background: transparent;
 }
 

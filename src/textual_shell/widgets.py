@@ -69,6 +69,13 @@ class PromptInput(Input):
         def __init__(self, is_focused: bool):
             super().__init__()
             self.is_focused = is_focused
+            
+    
+    BINDINGS = [
+        Binding('tab', 'switch_autocomplete', 'Switch to auto-complete if active', show=True, priority=True),
+        Binding('escape', 'hide', 'Hide auto-complete', show=True),
+        Binding('ctrl+@', 'activate_autocomplete', 'Activate auto-completions', show=True, key_display='ctrl+space')
+    ]
 
 
     def on_focus(self, event: events.Focus) -> None:
@@ -76,20 +83,16 @@ class PromptInput(Input):
     
     def on_blur(self, event: events.Blur) -> None:
         self.post_message(self.FocusChange(False))
-    
-    def key_tab(self, event: events.Key) -> None:
-        event.stop()
+            
+    def action_switch_autocomplete(self) -> None:
         self.post_message(self.AutoComplete())
         
-    def key_escape(self, event: events.Key) -> None:
-        event.stop()
+    def action_activate_autocomplete(self) -> None:
+        self.post_message(self.Show(self.cursor_position))
+        
+    def action_hide(self):
         self.post_message(self.Hide())
         
-    def on_key(self, event: events.Key) -> None:
-        if event.key == 'ctrl+@':
-            event.stop()
-            self.post_message(self.Show(self.cursor_position))
-
 
 class Prompt(Widget):
     
@@ -319,12 +322,16 @@ class Shell(Widget):
         ol.add_options(suggestions)
   
     def update_suggestions_location(self, cursor: int) -> None:
+        rich_log = self.query_one(RichLog)
+        log(f'Max-height: {rich_log.styles.max_height}')
         ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
         ol.styles.offset = (
             self.prompt_input_offset.x + cursor + self.suggestion_offset.x,
-            self.prompt_input_offset.y + self.suggestion_offset.y + len(self.history_list) 
+            self.prompt_input_offset.y + self.suggestion_offset.y + min(
+                len(self.history_list), rich_log.styles.max_height.value
+            )
         )
-        
+
     def update_prompt_input(self, suggestion: str) -> None:
         prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         with prompt_input.prevent(Input.Changed):
