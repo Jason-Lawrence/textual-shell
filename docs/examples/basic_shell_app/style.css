@@ -17,11 +17,9 @@ Screen {
 }
 
 Prompt {
-    border: round white;
     margin: 0;
-    padding: 0;
+    padding-top: 2;
     height: 4;
-    width: 100;
     layout: horizontal
 }
 
@@ -55,6 +53,17 @@ CommandList Rule {
     width: 20;
     box-sizing: border-box;
     border: round white;
+}
+
+Shell Container {
+    border: round white;
+    height: auto;
+}
+
+Shell Container RichLog {
+    height: auto;
+    max-height: 30;
+    background: transparent;
 }
 
 HelpScreen {

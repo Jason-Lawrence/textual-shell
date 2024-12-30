@@ -27,7 +27,7 @@ class BasicShell(ShellApp):
             Shell(
                 self.cmd_list,
                 prompt='xbsr <$ ',
-                suggestion_offset=Offset(10, 3)
+                suggestion_offset=Offset(10, 5)
             ),
             SettingsDisplay(self.CONFIG_PATH),
             id='app-grid'
