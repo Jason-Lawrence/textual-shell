@@ -3,7 +3,7 @@ from typing import Annotated, List
 from textual import events, work, log
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Grid
+from textual.containers import Grid, Container
 from textual.geometry import Offset
 from textual.reactive import reactive
 from textual.message import Message
@@ -13,7 +13,8 @@ from textual.widgets import (
     Input, 
     Label,
     OptionList, 
-    Rule, 
+    Rule,
+    RichLog,
     TextArea 
 )
 from textual.worker import Worker, get_current_worker
@@ -176,7 +177,10 @@ class Suggestions(OptionList):
     
     
     BINDINGS = [
-        Binding('backspace', 'cancel_completion', 'Cancel Autocompletion', show=False)   
+        Binding('backspace', 'cancel_completion', 'Cancel Autocompletion'),
+        Binding('tab', 'cycle', 'Cycle autocompletion', priority=True),
+        Binding('space', 'continue', 'Select autocompletion'),
+        Binding('escape', 'hide', 'Hide autosuggestion')
     ]    
 
     def on_focus(self, event: events.Focus) -> None:
@@ -189,8 +193,7 @@ class Suggestions(OptionList):
         self.highlighted = None
         self.post_message(self.Cancel())
       
-    def key_tab(self, event: events.Key) -> None:
-        event.stop()
+    def action_cycle(self) -> None:
         if self.option_count == 0:
             return 
         
@@ -202,12 +205,10 @@ class Suggestions(OptionList):
         suggestion = self.get_option_at_index(next).prompt
         self.post_message(self.Cycle(suggestion))
         
-    def key_space(self, event: events.Key) -> None:
-        event.stop()
+    def action_continue(self) -> None:
         self.post_message(self.Continue())
         
-    def key_escape(self, event: events.Key) -> None:
-        event.stop()
+    def action_hide(self) -> None:
         self.post_message(self.Hide())
         
         
@@ -250,6 +251,7 @@ class Shell(Widget):
     is_prompt_focused = reactive(True)
     are_suggestions_focused = reactive(False)
     show_suggestions = reactive(False)
+    history_list: reactive[list[str]] = reactive(list)
     
     BINDINGS = [
         Binding('up', 'up_history', 'Cycle up through the history'),
@@ -265,6 +267,7 @@ class Shell(Widget):
         prompt_label_id: Annotated[str, 'The css id for the prompt label']='prompt-label',
         suggestion_id: Annotated[str, 'The css id for the suggestions']='auto-complete',
         suggestion_offset: Annotated[Offset, 'The Offset to draw the suggestions from the shell input']=Offset(0, 4),
+        history_id: Annotated[str, 'The css id for the history log']='history-log',
         history_log: Annotated[str, 'The path to write the history log too.']=None,
         *args, **kwargs
     ) -> None:
@@ -276,7 +279,7 @@ class Shell(Widget):
         self.prompt_label_id = prompt_label_id
         self.suggestion_id = suggestion_id
         self.suggestion_offset = suggestion_offset
-        self.history_list = []
+        self.history_id = history_id
         self.current_history_index = None
         
         for cmd in self.commands:
@@ -288,11 +291,13 @@ class Shell(Widget):
         self.update_suggestions(self.command_list)
         
     def compose(self) -> ComposeResult:
-        
-        yield Prompt(
-            prompt=self.prompt,
-            prompt_input_id=self.prompt_input_id,
-            prompt_label_id=self.prompt_label_id
+        yield Container(
+            RichLog(id=self.history_id),
+            Prompt(
+                prompt=self.prompt,
+                prompt_input_id=self.prompt_input_id,
+                prompt_label_id=self.prompt_label_id
+            )
         )
         yield Suggestions(id=self.suggestion_id)
         
@@ -317,7 +322,7 @@ class Shell(Widget):
         ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
         ol.styles.offset = (
             self.prompt_input_offset.x + cursor + self.suggestion_offset.x,
-            self.prompt_input_offset.y + self.suggestion_offset.y
+            self.prompt_input_offset.y + self.suggestion_offset.y + len(self.history_list) 
         )
         
     def update_prompt_input(self, suggestion: str) -> None:
@@ -433,7 +438,8 @@ class Shell(Widget):
             )
             return
         
-        self.history_list.append(event.cmd)
+        self.history_list.insert(0, event.cmd)
+        self.mutate_reactive(Shell.history_list)
         self.current_history_index = None
         
     def on_suggestions_focus_change(self, event: Suggestions.FocusChange) -> None:
@@ -492,10 +498,25 @@ class Shell(Widget):
     def watch_show_suggestions(self, show: bool) -> None:
         self.decide_to_show_suggestions()
         
+    def watch_history_list(self, history_list: List[str]) -> None:
+        try:
+            rich_log = self.query_one(f'#{self.history_id}', RichLog)
+            rich_log.write(f'{self.prompt}{history_list[0]}')
+
+        except:
+            return
+        
     def action_clear_prompt(self) -> None:
         prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         prompt_input.value = ''
         prompt_input.action_home()
+        
+        ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
+        ol.highlighted = None
+        
+        if ol.has_focus:
+            prompt_input.focus()
+        
         self.current_history_index = None
         
     def action_up_history(self):
