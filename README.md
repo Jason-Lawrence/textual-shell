@@ -60,5 +60,4 @@ if __name__ == '__main__':
 * Command line validation
 * write documentation on Commands
 * write documentation on shell key binds
-* Add command history log
 * redo key binds
