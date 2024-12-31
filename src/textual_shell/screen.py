@@ -7,6 +7,21 @@ from textual.widgets import Button, Label, Markdown
 
 
 class HelpScreen(ModalScreen):
+    """
+    Default Help screen Modal. Displays the text generated 
+    by the help function on Commands.
+    
+    Args:
+        help_text (str): The help text to display.
+        help_label_id (str): The CSS id for the Label. 
+            Defaults to help-label.
+        help_button_id (str): The CSS id for the Button. 
+            Defaults to help-close.
+        help_display_id (str): The CSS id for the Markdown. 
+            Defaults to help-display.
+        help_dialog_id (str): The CSS id for the Grid Container. 
+            Defaults to help-dialog.
+    """
     
     def __init__(
         self,
@@ -32,5 +47,6 @@ class HelpScreen(ModalScreen):
         )
         
     def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Close help modal."""
         if event.button.id == self.help_button_id:
             self.app.pop_screen()
