@@ -23,6 +23,17 @@ from . import configure
 from .command import Command
 
 class CommandList(Widget):
+    """
+    Custom widget for listing commands for the shell.
+    
+    Args:
+        command_list (List[str]): List of commands for the custom shell.
+        cmd_label_id (str): CSS id for the Label.
+            Defaults to cmd-label.
+        cmd_list_id (str): CSS id for the TextArea.
+            Defaults to cmd-list.
+            
+    """
     
     def __init__(
         self, 
@@ -49,16 +60,31 @@ class CommandList(Widget):
         )
         
 class PromptInput(Input):
+    """
+    Custom Input widget for entering commands.
+    Pressing ctrl+space will activate the Suggestions widget.
+    Pressing tab will switch focus to the Suggestions widget.
+    Pressing escape will hide the Suggestions widget.
+    """
     
     class AutoComplete(Message):
+        """Switch to the suggestions widget for auto-completions."""
         pass
     
     class Show(Message):
+        """
+        Activate the suggestions widget.
+        
+        Args:
+            cursor (int): The x location of the cursor.
+                Used to position the suggestions widget.
+        """
         def __init__(self, cursor: int) -> None:
             super().__init__()
             self.cursor_position = cursor
     
     class Hide(Message):
+        """Hide the suggestions widget."""
         pass
 
     class FocusChange(Message):
@@ -79,22 +105,35 @@ class PromptInput(Input):
 
 
     def on_focus(self, event: events.Focus) -> None:
+        """PromptInput widget has gained focus."""
         self.post_message(self.FocusChange(True))
     
     def on_blur(self, event: events.Blur) -> None:
+        """PromptInput widget has lost focus."""
         self.post_message(self.FocusChange(False))
             
     def action_switch_autocomplete(self) -> None:
+        """Switch to the Suggestion focus."""
         self.post_message(self.AutoComplete())
         
     def action_activate_autocomplete(self) -> None:
+        """Activate the Suggestions."""
         self.post_message(self.Show(self.cursor_position))
         
     def action_hide(self):
+        """Hide the Suggestions."""
         self.post_message(self.Hide())
         
 
 class Prompt(Widget):
+    """
+    Custom Widget for Containing the Prompt Input and Label.
+    
+    Args:
+        prompt (str): The prompt for the shell.
+        prompt_input_id (str): The CSS id for the prompt input.
+        prompt_label_id (str): The CSS id for the prompt label.
+    """
     
     class CommandInput(Message):
         """User Typed into the shell."""
@@ -132,6 +171,11 @@ class Prompt(Widget):
         yield PromptInput(id=self.prompt_input_id, select_on_focus=False)
         
     def on_input_changed(self, event: Input.Changed) -> None:
+        """
+        Catch when the input value has changed and 
+        and notify the parent shell of the current input 
+        and location of the cursor.
+        """
         event.stop()
         prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         self.cmd_input = event.value
@@ -143,6 +187,9 @@ class Prompt(Widget):
         )
         
     def on_input_submitted(self, event: Input.Submitted) -> None:
+        """
+        Catch when a command has been entered.
+        """
         event.stop()
         prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         prompt_input.value = ''
@@ -151,6 +198,7 @@ class Prompt(Widget):
     
 
 class Suggestions(OptionList):
+    """Widget for displaying the suggestion for auto-completions as a pop-up."""
     
     class FocusChange(Message):
         """
@@ -163,12 +211,19 @@ class Suggestions(OptionList):
             
             
     class Cycle(Message):
-        def __init__(self, next: str):
+        """
+        Cycle the highlighted suggestion.
+        
+        Args:
+            next (str): The next suggestion.
+        """
+        def __init__(self, next: Annotated[str, 'The next suggestion.']):
             super().__init__()
             self.next = next
-            
-    
+
+
     class Continue(Message):
+        """Select the current highlighted suggestion."""
         pass
     
     class Hide(Message):
@@ -176,6 +231,7 @@ class Suggestions(OptionList):
         pass
     
     class Cancel(Message):
+        """Cancel the suggestion and undo the auto-completion."""
         pass
     
     
@@ -187,16 +243,20 @@ class Suggestions(OptionList):
     ]    
 
     def on_focus(self, event: events.Focus) -> None:
+        """The Suggestion widget has gained focus."""
         self.post_message(self.FocusChange(True))
     
     def on_blur(self, event: events.Blur) -> None:
+        """The Suggestion widget has lost focus."""
         self.post_message(self.FocusChange(False))
       
     def action_cancel_completion(self) -> None:
+        """Cancel the auto-completion."""
         self.highlighted = None
         self.post_message(self.Cancel())
       
     def action_cycle(self) -> None:
+        """Cycle to the next completion."""
         if self.option_count == 0:
             return 
         
@@ -209,13 +269,16 @@ class Suggestions(OptionList):
         self.post_message(self.Cycle(suggestion))
         
     def action_continue(self) -> None:
+        """Select the autocompletion."""
         self.post_message(self.Continue())
         
     def action_hide(self) -> None:
+        """Hide the Suggestions"""
         self.post_message(self.Hide())
         
         
 class SettingsDisplay(Widget):
+    """Custom widget for displaying settings for the shell."""
     
     def __init__(
         self,
@@ -228,6 +291,7 @@ class SettingsDisplay(Widget):
         self.settings_label_id = settings_label_id
         
     def on_mount(self) -> None:
+        """Load the settings from the config on mount."""
         table = self.query_one(DataTable)
         table.can_focus = False
         self.column_keys = table.add_columns('setting', 'value')
@@ -250,6 +314,22 @@ class SettingsDisplay(Widget):
 
 
 class Shell(Widget):
+    """
+    Main custom widget for the shell.
+    Pressing the up arrow key will cycle up through the history.
+    Pressing the down arrow key will cycle down through the history,
+    Pressing ctrl+c will clear the prompt input.
+    
+    Args:
+        commands (List[Command]): List of shell commands.
+        prompt (str): prompt for the shell.
+        prompt_input_id (str): The CSS id for the prompt input.
+        prompt_label_id (str): The CSS id for the prompt label.
+        suggestion_id (str): The CSS id for the suggestion widget.
+        suggestion_offset (Offset): The offset to draw the suggestion.
+        history_id (str): The CSS id for the rich log.
+        history_log (str): The path for the history log file. 
+    """
     
     is_prompt_focused = reactive(True)
     are_suggestions_focused = reactive(False)
@@ -289,6 +369,7 @@ class Shell(Widget):
             cmd.widget = self
     
     def on_mount(self):
+        """Update the location and suggestions for auto-completions."""
         prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         self.prompt_input_offset = prompt_input.offset
         self.update_suggestions(self.command_list)
@@ -304,7 +385,19 @@ class Shell(Widget):
         )
         yield Suggestions(id=self.suggestion_id)
         
-    def get_cmd_obj(self, cmd) -> Command:
+    def get_cmd_obj(
+        self,
+        cmd: Annotated[str, 'The name of the command.']
+    ) -> Command:
+        """
+        Retrieve the cmd instance.
+        
+        Args:
+            cmd (str): The name of the command.
+            
+        Returns:
+            command (Command): The command instance for the command.
+        """
         for command in self.commands:
             if command.name == cmd:
                 return command
@@ -313,15 +406,31 @@ class Shell(Widget):
         
     def update_suggestions(
         self,
-        suggestions: Annotated[List[str], 'suggestions for the ListView.']
+        suggestions: Annotated[List[str], 'suggestions for the OptionList.']
     ) -> None:
+        """
+        Update the list of Suggestions.
+        
+        Args:
+            suggestions (List[str]): The new suggestions.
+            
+        """
         ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
         ol.clear_options()
         if self.show_suggestions:
             ol.visible = False if len(suggestions) == 0 else True
         ol.add_options(suggestions)
   
-    def update_suggestions_location(self, cursor: int) -> None:
+    def update_suggestions_location(
+        self, 
+        cursor: Annotated[int, 'The x location of the cursor.']
+    ) -> None:
+        """
+        Update the location of the Suggestions.
+        
+        Args:
+            cursor (int): The x location of the cursor.
+        """
         rich_log = self.query_one(RichLog)
         log(f'Max-height: {rich_log.styles.max_height}')
         ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
@@ -332,14 +441,27 @@ class Shell(Widget):
             )
         )
 
-    def update_prompt_input(self, suggestion: str) -> None:
+    def update_prompt_input(
+        self,
+        suggestion: Annotated[str, 'The selected suggestion.']
+    ) -> None:
+        """
+        Add the suggestion to the prompt input.
+        This will prevent Input.Changed events from generating.
+        
+        Args:
+            suggestion (str): The selected suggestion.
+        """
         prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
         with prompt_input.prevent(Input.Changed):
             cmd_split = prompt_input.value.split(' ')
             cmd_split[-1] = suggestion
             prompt_input.value = ' '.join(cmd_split)
         
-    def on_prompt_input_auto_complete(self, event: PromptInput.AutoComplete) -> None:
+    def on_prompt_input_auto_complete(
+        self,
+        event: PromptInput.AutoComplete
+    ) -> None:
         event.stop()
         ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
         if ol.option_count == 0 or not ol.visible:
