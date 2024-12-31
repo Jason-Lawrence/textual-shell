@@ -57,24 +57,19 @@ class CommandList(Widget):
     def __init__(
         self, 
         command_list: Annotated[List[str], 'List of commands for the custom shell.'],
-        cmd_label_id: Annotated[str, 'CSS id for the Label']='cmd-label',
-        cmd_list_id: Annotated[str, 'CSS id for the TextArea']='cmd-list'
     ) -> None:
         self.commands = command_list
-        self.cmd_label_id = cmd_label_id
-        self.cmd_list_id = cmd_list_id
         super().__init__()
     
     def on_mount(self):
-        ta = self.query_one(f'#{self.cmd_list_id}', TextArea)
+        ta = self.query_one(TextArea)
         ta.can_focus = False
     
     def compose(self) -> ComposeResult:
-        yield Label('Commands', id=self.cmd_label_id)
+        yield Label('Commands')
         yield TextArea(
             '\n'.join(self.commands),
-            read_only=True, 
-            id=self.cmd_list_id
+            read_only=True
         )
         
 class PromptInput(Input):
@@ -167,46 +162,25 @@ class Prompt(Widget):
             self.cmd = cmd
             
     DEFAULT_CSS = """
-        Prompt {
-            margin: 0;
-            padding-top: 0;
-            height: 1;
-            layout: horizontal
-        }
         
-        Prompt Label {
-            padding: 0;
-            padding-left: 1;
-        }
-        
-        Prompt PromptInput {
-            border: none;
-            background: transparent;
-            margin-left: 0;
-            padding-left: 0;
-        }
     """
             
     cmd_input = reactive('')
     
     def __init__(
         self, 
-        prompt: Annotated[str, 'prompt for the shell.'],
-        prompt_input_id: Annotated[str, 'The css id for the prompt input'],
-        prompt_label_id: Annotated[str, 'The css id for the prompt label']
+        prompt: Annotated[str, 'prompt for the shell.']
     ) -> None:
         super().__init__()
         self.prompt = prompt
-        self.prompt_input_id = prompt_input_id
-        self.prompt_label_id = prompt_label_id
     
     def on_mount(self) -> None:
-        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input = self.query_one(PromptInput)
         prompt_input.focus()
         
     def compose(self) -> ComposeResult:
-        yield Label(f'[b]{self.prompt}[/b]', id=self.prompt_label_id)
-        yield PromptInput(id=self.prompt_input_id, select_on_focus=False)
+        yield Label(f'[b]{self.prompt}[/b]')
+        yield PromptInput(select_on_focus=False)
         
     def on_input_changed(self, event: Input.Changed) -> None:
         """
@@ -215,7 +189,7 @@ class Prompt(Widget):
         and location of the cursor.
         """
         event.stop()
-        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input = self.query_one(PromptInput)
         self.cmd_input = event.value
         self.post_message(
             self.CommandInput(
@@ -229,7 +203,7 @@ class Prompt(Widget):
         Catch when a command has been entered.
         """
         event.stop()
-        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input = self.query_one(PromptInput)
         prompt_input.value = ''
         prompt_input.action_home()
         self.post_message(self.CommandEntered(event.value))
@@ -279,16 +253,6 @@ class Suggestions(OptionList):
         Binding('space', 'continue', 'Select autocompletion'),
         Binding('escape', 'hide', 'Hide autosuggestion')
     ]
-    
-    DEFAULT_CSS = """
-        Suggestions {
-            layer: popup;
-            height: auto;
-            width: 20;
-            box-sizing: border-box;
-            border: round white;
-        }
-    """
 
     def on_focus(self, event: events.Focus) -> None:
         """The Suggestion widget has gained focus."""
@@ -337,12 +301,12 @@ class SettingsDisplay(Widget):
             height: 15;
         }
 
-        SettingsDisplay Grid Label {
+        SettingsDisplay Label {
             text-align: center;
             column-span: 2;
         }
 
-        SettingsDisplay Grid DataTable {
+        SettingsDisplay DataTable {
             column-span: 2;
             border-top: solid white;
         }
@@ -351,12 +315,10 @@ class SettingsDisplay(Widget):
     def __init__(
         self,
         config_path: Annotated[str, 'THe path to the config file.']=None,
-        settings_label_id: Annotated[str, 'The css id for the settings label']='settings-label',
         *args, **kwargs
     ) -> None:
         super().__init__(*args, **kwargs)
         self.config_path = config_path
-        self.settings_label_id = settings_label_id
         
     def on_mount(self) -> None:
         """Load the settings from the config on mount."""
@@ -376,7 +338,7 @@ class SettingsDisplay(Widget):
                 
     def compose(self) -> ComposeResult:
         yield Grid(
-            Label('Settings', id=self.settings_label_id),
+            Label('Settings'),
             DataTable()            
         )
 
@@ -416,11 +378,49 @@ class Shell(Widget):
             height: auto;
         }
         
-        Shell Container RichLog {
+        Shell RichLog {
             height: auto;
             max-height: 10;
             padding: 0 1;
             background: transparent;
+            border: hidden;
+        }
+        
+        Prompt {
+            margin: 0;
+            padding-top: 0;
+            height: 1;
+            layout: horizontal;
+        
+            Label {
+                padding: 0;
+                padding-left: 1;
+            }
+            
+            PromptInput {
+                border: hidden;
+                background: transparent;
+                margin-left: 0;
+                padding-left: 0;
+            }
+            
+            PromptInput:focus {
+                border: none;
+                padding: 0;
+            }
+        }
+        
+        Suggestions {
+            layer: popup;
+            height: auto;
+            width: 20;
+            border: round white;
+            padding: 0;
+        }
+        
+        Suggestions:focus {
+            border: round white;
+            padding: 0;
         }
     """
     
@@ -428,11 +428,7 @@ class Shell(Widget):
         self,
         commands: Annotated[List[Command], 'List of Shell Commands'],
         prompt: Annotated[str, 'prompt for the shell.'],
-        prompt_input_id: Annotated[str, 'The css id for the prompt input']='prompt-input',
-        prompt_label_id: Annotated[str, 'The css id for the prompt label']='prompt-label',
-        suggestion_id: Annotated[str, 'The css id for the suggestions']='auto-complete',
         suggestion_offset: Annotated[Offset, 'The Offset to draw the suggestions from the shell input']=Offset(0, 4),
-        history_id: Annotated[str, 'The css id for the history log']='history-log',
         history_log: Annotated[str, 'The path to write the history log too.']=None,
         *args, **kwargs
     ) -> None:
@@ -440,32 +436,45 @@ class Shell(Widget):
         self.commands = commands
         self.command_list = [cmd.name for cmd in self.commands]
         self.prompt = prompt
-        self.prompt_input_id = prompt_input_id
-        self.prompt_label_id = prompt_label_id
-        self.suggestion_id = suggestion_id
         self.suggestion_offset = suggestion_offset
-        self.history_id = history_id
         self.current_history_index = None
         
         for cmd in self.commands:
             cmd.widget = self
+            
+    def _get_prompt(self) -> Prompt:
+        """
+        Query the DOM for the child Prompt widget.
+        
+        Returns:
+            prompt (Prompt): The child widget.
+        """
+        return self.query_one(Prompt)
     
+    def _get_prompt_input(self) -> PromptInput:
+        """
+        Retrieve the PromptInput widget from the DOM.
+        
+        Returns:
+            prompt_input (PromptInput): The child widget.
+        """
+        prompt = self._get_prompt()
+        return prompt.query_one(PromptInput)
+        
     def on_mount(self):
         """Update the location and suggestions for auto-completions."""
-        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input = self._get_prompt_input()
         self.prompt_input_offset = prompt_input.offset
         self.update_suggestions(self.command_list)
         
     def compose(self) -> ComposeResult:
         yield Container(
-            RichLog(id=self.history_id),
+            RichLog(markup=True),
             Prompt(
                 prompt=self.prompt,
-                prompt_input_id=self.prompt_input_id,
-                prompt_label_id=self.prompt_label_id
             )
         )
-        yield Suggestions(id=self.suggestion_id)
+        yield Suggestions()
         
     def get_cmd_obj(
         self,
@@ -497,7 +506,7 @@ class Shell(Widget):
             suggestions (List[str]): The new suggestions.
             
         """
-        ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
+        ol = self.query_one(Suggestions)
         ol.clear_options()
         if self.show_suggestions:
             ol.visible = False if len(suggestions) == 0 else True
@@ -515,7 +524,7 @@ class Shell(Widget):
         """
         rich_log = self.query_one(RichLog)
         log(f'Max-height: {rich_log.styles.max_height}')
-        ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
+        ol = self.query_one(Suggestions)
         ol.styles.offset = (
             self.prompt_input_offset.x + cursor + self.suggestion_offset.x,
             self.prompt_input_offset.y + self.suggestion_offset.y + min(
@@ -534,7 +543,7 @@ class Shell(Widget):
         Args:
             suggestion (str): The selected suggestion.
         """
-        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input = self._get_prompt_input()
         with prompt_input.prevent(Input.Changed):
             cmd_split = prompt_input.value.split(' ')
             cmd_split[-1] = suggestion
@@ -545,7 +554,7 @@ class Shell(Widget):
         event: PromptInput.AutoComplete
     ) -> None:
         event.stop()
-        ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
+        ol = self.query_one(Suggestions)
         if ol.option_count == 0 or not ol.visible:
             return
         
@@ -562,7 +571,7 @@ class Shell(Widget):
         
     def on_suggestions_continue(self, event: Suggestions.Continue) -> None:
         event.stop()
-        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input = self._get_prompt_input()
         prompt_input.value += ' '
         prompt_input.action_end()
         prompt_input.focus()
@@ -659,14 +668,14 @@ class Shell(Widget):
         
     def on_suggestions_hide(self, event: Suggestions.Hide) -> None:
         event.stop()
-        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input = self._get_prompt_input()
         prompt_input.action_end()
         prompt_input.focus()
         self.show_suggestions = False
         
     def on_suggestions_cancel(self, event: Suggestions.Cancel) -> None:
         event.stop()
-        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input = self._get_prompt_input()
         
         cmd_line = prompt_input.value.split(' ')
         cmd_line.pop(-1)
@@ -680,7 +689,7 @@ class Shell(Widget):
         
     
     def toggle_suggestions(self, toggle: bool):
-        ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
+        ol = self.query_one(Suggestions)
         if not toggle:
             ol.visible = toggle
             
@@ -711,18 +720,18 @@ class Shell(Widget):
         
     def watch_history_list(self, history_list: List[str]) -> None:
         try:
-            rich_log = self.query_one(f'#{self.history_id}', RichLog)
+            rich_log = self.query_one(RichLog)
             rich_log.write(f'{self.prompt}{history_list[0]}')
 
         except:
             return
         
     def action_clear_prompt(self) -> None:
-        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input = self._get_prompt_input()
         prompt_input.value = ''
         prompt_input.action_home()
         
-        ol = self.query_one(f'#{self.suggestion_id}', Suggestions)
+        ol = self.query_one(Suggestions)
         ol.highlighted = None
         
         if ol.has_focus:
@@ -744,7 +753,7 @@ class Shell(Widget):
             self.current_history_index += 1
         
         previous_cmd = self.history_list[self.current_history_index]
-        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input = self._get_prompt_input()
         prompt_input.value = previous_cmd
         prompt_input.action_end()
     
@@ -760,7 +769,7 @@ class Shell(Widget):
         elif self.current_history_index is None:
             return
         
-        prompt_input = self.query_one(f'#{self.prompt_input_id}', PromptInput)
+        prompt_input = self._get_prompt_input()
         self.current_history_index -= 1
         previous_cmd = self.history_list[self.current_history_index]
         prompt_input.value = previous_cmd
@@ -792,18 +801,8 @@ class CommandLog(Widget):
         }
     """
     
-    def __init__(
-        self,
-        label_id: Annotated[str, 'The css id for the label.']='cmd-log-label',
-        rich_log_id: Annotated[str, 'The css id for the rich log.']='cmd-log-log',
-        *args, **kwargs
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self.label_id = label_id
-        self.rich_log_id = rich_log_id
-    
     def compose(self) -> ComposeResult:
         yield Container(
-            Label('Command Log', id=self.label_id),
-            RichLog(id=self.rich_log_id)
+            Label('Command Log'),
+            RichLog(markup=True)
         )
