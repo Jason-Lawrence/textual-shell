@@ -13,7 +13,13 @@ from .screen import HelpScreen
 
 
 class CommandArgument:
-    """Used as nodes for the rustworkx.PyDiGraph"""
+    """
+    Used as nodes for the rustworkx.PyDiGraph"
+    
+    Args:
+        name (str): The name of the command or sub-command.
+        description (str): The description of the command or sub-command.
+    """
     def __init__(
         self,
         name: Annotated[str, 'The name of the argument or sub-command'],
@@ -33,7 +39,15 @@ class Command(ABC):
     """Base class for the Commands for the shell widget."""
     
     class Log(Message):
-        """Default Logging event for commands."""
+        """
+        Default Logging event for commands.
+        
+        Args:
+            command (str): The name of the command sending the log.
+            msg (str): The log message.
+            severity (str): The level of the severity.
+            
+        """
         def __init__(
             self,
             command: Annotated[str, 'The name of the command sending the log.'],
@@ -208,6 +222,13 @@ class Command(ABC):
         msg: Annotated[str, 'log message'],
         severity: Annotated[str, 'The level of severity']
     ) -> None:
+        """
+        Send logs to the app.
+        
+        Args:
+            msg (str): The log message.
+            severity (str): The severity level of the log.
+        """
         self.widget.post_message(self.Log(self.name, msg, severity))
                 
         
