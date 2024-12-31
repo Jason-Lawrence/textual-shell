@@ -41,16 +41,17 @@ class CommandList(Widget):
             height: auto;
             width: 20;
             layout: vertical;
-        }
-        
-        CommandList Label {
-            text-align: center;
-        }
-        
-        CommandList TextArea {
-            background: transparent;
-            border-top: solid white;
-            text-align: center;
+            
+            Label {
+                text-align: center;
+            }
+            
+            TextArea {
+                background: transparent;
+                border: none;
+                border-top: solid white;
+                text-align: center;
+            }
         }
     """
     
@@ -293,22 +294,23 @@ class SettingsDisplay(Widget):
     """Custom widget for displaying settings for the shell."""
     
     DEFAULT_CSS = """
-        SettingsDisplay Grid { 
+    
+        SettingsDisplay {
             grid-size: 2;
             grid-columns: 1fr;
             grid-rows: auto 1fr;
             border: solid white;
             height: 15;
-        }
-
-        SettingsDisplay Label {
-            text-align: center;
-            column-span: 2;
-        }
-
-        SettingsDisplay DataTable {
-            column-span: 2;
-            border-top: solid white;
+                
+            Label {
+                text-align: center;
+                column-span: 2;
+            }
+            
+            DataTable {
+                column-span: 2;
+                border-top: solid white;
+            }
         }
     """
     
@@ -337,10 +339,9 @@ class SettingsDisplay(Widget):
                 table.add_row(*row, key=setting)
                 
     def compose(self) -> ComposeResult:
-        yield Grid(
-            Label('Settings'),
-            DataTable()            
-        )
+        yield Label('Settings')
+        yield DataTable()            
+        
 
 
 class Shell(Widget):
@@ -787,17 +788,19 @@ class CommandLog(Widget):
         CommandLog {
             height: 50;
             border: round white;
-        }
-        
-        CommandLog Label {
-            text-align: center;
-            width: auto;
-        }
-        
-        CommandLog RichLog {
-            height: auto;
-            max-height: 50;
-            border-top: solid white;
+            
+            Label {
+                text-align: center;
+                width: auto;
+            }
+            
+            RichLog {
+                height: auto;
+                max-height: 50;
+                border: none;
+                border-top: solid white;
+                background: transparent;
+            }
         }
     """
     
