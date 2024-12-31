@@ -1,13 +1,13 @@
 import os
 
 from textual.app import ComposeResult
-from textual.containers import Grid
+from textual.containers import Grid, Container
 from textual.geometry import Offset
 from textual.widgets import Header, Footer
 
 from textual_shell.app import ShellApp
 from textual_shell.command import Help, Set
-from textual_shell.widgets import CommandList, Shell, SettingsDisplay
+from textual_shell.widgets import CommandList, Shell, SettingsDisplay, CommandLog
 
 class BasicShell(ShellApp):
     
@@ -30,6 +30,9 @@ class BasicShell(ShellApp):
                 suggestion_offset=Offset(10, 2)
             ),
             SettingsDisplay(self.CONFIG_PATH),
+            Container(),
+            Container(),
+            CommandLog(),
             id='app-grid'
         )
         

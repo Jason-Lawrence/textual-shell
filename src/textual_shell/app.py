@@ -1,10 +1,10 @@
 from textual import log
 from textual.app import App
 from textual.css.query import NoMatches
-from textual.widgets import DataTable
+from textual.widgets import DataTable, RichLog
 
-from textual_shell.command import Set
-from textual_shell.widgets import SettingsDisplay
+from textual_shell.command import Set, Command
+from textual_shell.widgets import SettingsDisplay, CommandLog
 
 
 class ShellApp(App):
@@ -20,3 +20,10 @@ class ShellApp(App):
             
         except NoMatches as e:
             log(f'SettingsDisplay widget is not in the DOM.')
+
+    def on_command_log(self, event: Command.Log) -> None:
+        event.stop()
+        command_log = self.query_one(CommandLog)
+        rich_log = command_log.query_one(RichLog)
+        log_entry = f'[{event.severity}] {event.command}:\t{event.msg}'
+        rich_log.write(log_entry)

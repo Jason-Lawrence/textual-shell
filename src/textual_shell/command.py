@@ -31,6 +31,20 @@ class CommandArgument:
 
 class Command(ABC):
     """Base class for the Commands for the shell widget."""
+    
+    class Log(Message):
+        """Default Logging event for commands."""
+        def __init__(
+            self,
+            command: Annotated[str, 'The name of the command sending the log.'],
+            msg: Annotated[str, 'The log message.'],
+            severity: Annotated[str, 'The level of the severity']
+        ) -> None:
+            super().__init__()
+            self.command = command
+            self.msg = msg
+            self.severity = severity
+    
     def __init__(
         self,
         cmd_struct: Annotated[rx.PyDiGraph, 'The command line structure']=None,
@@ -188,6 +202,13 @@ class Command(ABC):
                 current_index = next_index
         
         return False
+    
+    def send_log(
+        self,
+        msg: Annotated[str, 'log message'],
+        severity: Annotated[str, 'The level of severity']
+    ) -> None:
+        self.widget.post_message(self.Log(self.name, msg, severity))
                 
         
     @abstractmethod
@@ -341,6 +362,7 @@ class Set(Command):
             setting (str): The name of the setting.
             value (str): The value the setting was set to.
         """
+        self.send_log(f'Updating setting: {section}.{setting}', 'INFO')
         configure.update_setting(section, setting, self.config_path, value)
     
     def settings_changed(

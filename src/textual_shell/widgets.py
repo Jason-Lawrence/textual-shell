@@ -566,3 +566,40 @@ class Shell(Widget):
     def execute_command(self, cmd: Command, *cmd_line):
         worker = get_current_worker()
         res = cmd.execute(*cmd_line)
+
+
+class CommandLog(Widget):
+    
+    DEFAULT_CSS = """
+        CommandLog {
+            height: 50;
+            border: round white;
+        }
+        
+        CommandLog Label {
+            text-align: center;
+            width: auto;
+        }
+        
+        CommandLog RichLog {
+            height: auto;
+            max-height: 50;
+            border-top: solid white;
+        }
+    """
+    
+    def __init__(
+        self,
+        label_id: Annotated[str, 'The css id for the label.']='cmd-log-label',
+        rich_log_id: Annotated[str, 'The css id for the rich log.']='cmd-log-log',
+        *args, **kwargs
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.label_id = label_id
+        self.rich_log_id = rich_log_id
+    
+    def compose(self) -> ComposeResult:
+        yield Container(
+            Label('Command Log', id=self.label_id),
+            RichLog(id=self.rich_log_id)
+        )
