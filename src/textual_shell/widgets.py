@@ -13,7 +13,6 @@ from textual.widgets import (
     Input, 
     Label,
     OptionList, 
-    Rule,
     RichLog,
     TextArea 
 )
@@ -35,6 +34,26 @@ class CommandList(Widget):
             
     """
     
+    DEFAULT_CSS = """
+        CommandList {
+            background: transparent;
+            border: round white;
+            height: auto;
+            width: 20;
+            layout: vertical;
+        }
+        
+        CommandList Label {
+            text-align: center;
+        }
+        
+        CommandList TextArea {
+            background: transparent;
+            border-top: solid white;
+            text-align: center;
+        }
+    """
+    
     def __init__(
         self, 
         command_list: Annotated[List[str], 'List of commands for the custom shell.'],
@@ -52,7 +71,6 @@ class CommandList(Widget):
     
     def compose(self) -> ComposeResult:
         yield Label('Commands', id=self.cmd_label_id)
-        yield Rule()
         yield TextArea(
             '\n'.join(self.commands),
             read_only=True, 
@@ -103,7 +121,6 @@ class PromptInput(Input):
         Binding('ctrl+@', 'activate_autocomplete', 'Activate auto-completions', show=True, key_display='ctrl+space')
     ]
 
-
     def on_focus(self, event: events.Focus) -> None:
         """PromptInput widget has gained focus."""
         self.post_message(self.FocusChange(True))
@@ -148,6 +165,27 @@ class Prompt(Widget):
         def __init__(self, cmd: str):
             super().__init__()
             self.cmd = cmd
+            
+    DEFAULT_CSS = """
+        Prompt {
+            margin: 0;
+            padding-top: 0;
+            height: 1;
+            layout: horizontal
+        }
+        
+        Prompt Label {
+            padding: 0;
+            padding-left: 1;
+        }
+        
+        Prompt PromptInput {
+            border: none;
+            background: transparent;
+            margin-left: 0;
+            padding-left: 0;
+        }
+    """
             
     cmd_input = reactive('')
     
@@ -240,7 +278,17 @@ class Suggestions(OptionList):
         Binding('tab', 'cycle', 'Cycle autocompletion', priority=True),
         Binding('space', 'continue', 'Select autocompletion'),
         Binding('escape', 'hide', 'Hide autosuggestion')
-    ]    
+    ]
+    
+    DEFAULT_CSS = """
+        Suggestions {
+            layer: popup;
+            height: auto;
+            width: 20;
+            box-sizing: border-box;
+            border: round white;
+        }
+    """
 
     def on_focus(self, event: events.Focus) -> None:
         """The Suggestion widget has gained focus."""
@@ -279,6 +327,26 @@ class Suggestions(OptionList):
         
 class SettingsDisplay(Widget):
     """Custom widget for displaying settings for the shell."""
+    
+    DEFAULT_CSS = """
+        SettingsDisplay Grid { 
+            grid-size: 2;
+            grid-columns: 1fr;
+            grid-rows: auto 1fr;
+            border: solid white;
+            height: 15;
+        }
+
+        SettingsDisplay Grid Label {
+            text-align: center;
+            column-span: 2;
+        }
+
+        SettingsDisplay Grid DataTable {
+            column-span: 2;
+            border-top: solid white;
+        }
+    """
     
     def __init__(
         self,
@@ -341,6 +409,20 @@ class Shell(Widget):
         Binding('down', 'down_history', 'Cycle down through the history'),
         Binding('ctrl+c', 'clear_prompt', 'Clear the input prompt', priority=True)
     ]
+    
+    DEFAULT_CSS = """
+        Shell Container {
+            border: round white;
+            height: auto;
+        }
+        
+        Shell Container RichLog {
+            height: auto;
+            max-height: 10;
+            padding: 0 1;
+            background: transparent;
+        }
+    """
     
     def __init__(
         self,

@@ -10,6 +10,12 @@ from textual_shell.widgets import SettingsDisplay, CommandLog
 class ShellApp(App):
     """Base app for the shell. Needed to catch messages sent by commands."""
         
+    DEFAULT_CSS = """
+            Screen {
+                layers: shell popup;
+            }
+        """    
+    
     def on_set_settings_changed(self, event: Set.SettingsChanged) -> None:
         """
         Catch messages for when a setting has been changed.

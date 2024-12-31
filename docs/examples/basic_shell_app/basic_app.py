@@ -11,7 +11,15 @@ from textual_shell.widgets import CommandList, Shell, SettingsDisplay, CommandLo
 
 class BasicShell(ShellApp):
     
-    CSS_PATH = 'style.css'
+    CSS = """
+        Grid {
+            grid-size: 3;
+            grid-rows: 1fr;
+            grid-columns: 20 2fr 1fr;
+            width: 1fr;
+        }
+    """
+    
     theme = 'tokyo-night'
         
     cmd_list = [Help(), Set()]
@@ -33,7 +41,6 @@ class BasicShell(ShellApp):
             Container(),
             Container(),
             CommandLog(),
-            id='app-grid'
         )
         
         

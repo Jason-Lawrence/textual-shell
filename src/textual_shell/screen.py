@@ -23,6 +23,45 @@ class HelpScreen(ModalScreen):
             Defaults to help-dialog.
     """
     
+    DEFAULT_CSS = """
+        HelpScreen {
+            align: center middle;
+            height: 50;
+        }
+        
+        HelpScreen Grid {
+            grid-size: 3;
+            grid-rows: 2 40;
+            grid-columns: 1fr 1fr 4;
+            width: 80;
+            height: auto;
+            background: $surface;
+            border: solid white;
+        }
+        
+        HelpScreen Grid Label {
+            column-span: 2;
+            content-align: center middle;
+            width: 1fr;
+            offset: 1 0;
+        }
+        
+        HelpScreen Grid Button {
+            column-span: 1;
+            text-align: center;
+            padding: 0;
+            margin: 0;
+        }
+        
+        HelpScreen Grid Markdown {
+            column-span: 3;
+            row-span: 2;
+            content-align: center middle;
+            border-top: solid white;
+        }
+        
+    """
+    
     def __init__(
         self,
         help_text: Annotated[str, 'The help text to display in the modal'],
