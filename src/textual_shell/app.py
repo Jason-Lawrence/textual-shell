@@ -8,8 +8,13 @@ from textual_shell.widgets import SettingsDisplay, CommandLog
 
 
 class ShellApp(App):
+    """Base app for the shell. Needed to catch messages sent by commands."""
         
     def on_set_settings_changed(self, event: Set.SettingsChanged) -> None:
+        """
+        Catch messages for when a setting has been changed.
+        Update the settings display to reflect the new value.
+        """
         event.stop()
         try:
             settings_display = self.query_one(SettingsDisplay)
@@ -22,6 +27,10 @@ class ShellApp(App):
             log(f'SettingsDisplay widget is not in the DOM.')
 
     def on_command_log(self, event: Command.Log) -> None:
+        """
+        Catch and logs sent by any command and write 
+        them to the CommandLog widget.
+        """
         event.stop()
         command_log = self.query_one(CommandLog)
         rich_log = command_log.query_one(RichLog)
