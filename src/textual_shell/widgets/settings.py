@@ -61,4 +61,4 @@ class SettingsDisplay(Widget):
                 
     def compose(self) -> ComposeResult:
         yield Label('Settings')
-        yield DataTable()    
+        yield DataTable()
