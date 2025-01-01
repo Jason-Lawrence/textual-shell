@@ -348,8 +348,7 @@ class Shell(Widget):
         
     def on_mount(self):
         """Update the location and suggestions for auto-completions."""
-        prompt_input = self._get_prompt_input()
-        self.prompt_input_offset = prompt_input.offset
+        self.get_offset()
         self.update_suggestions(self.command_list)
         
     def compose(self) -> ComposeResult:
@@ -379,6 +378,14 @@ class Shell(Widget):
                 return command
             
         return None
+    
+    def get_offset(self) -> None:
+        """Calculate the offset for the cursor location."""
+        prompt_input = self._get_prompt_input()
+        self.prompt_input_offset = Offset(
+            prompt_input.offset.x + len(self.prompt) + 1,
+            prompt_input.offset.y + 2
+        )
         
     def update_suggestions(
         self,
@@ -410,8 +417,8 @@ class Shell(Widget):
         rich_log = self.query_one(RichLog)
         ol = self.query_one(Suggestions)
         ol.styles.offset = (
-            self.prompt_input_offset.x + cursor + self.suggestion_offset.x,
-            self.prompt_input_offset.y + self.suggestion_offset.y + min(
+            self.prompt_input_offset.x + cursor,
+            self.prompt_input_offset.y + min(
                 len(self.history_list), rich_log.styles.max_height.value
             )
         )
