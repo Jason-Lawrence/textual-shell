@@ -1,4 +1,5 @@
 from typing import Annotated, List
+from collections import deque
 
 from textual import events, work
 from textual.app import ComposeResult
@@ -15,7 +16,6 @@ from textual.widgets import (
     RichLog
 )
 from textual.worker import get_current_worker
-
 
 from ..command import Command
 
@@ -249,7 +249,7 @@ class Shell(Widget):
     is_prompt_focused = reactive(True)
     are_suggestions_focused = reactive(False)
     show_suggestions = reactive(False)
-    history_list: reactive[list[str]] = reactive(list)
+    history_list: reactive[deque[str]] = reactive(deque)
     
     BINDINGS = [
         Binding('up', 'up_history', 'Cycle up through the history'),
@@ -600,7 +600,7 @@ class Shell(Widget):
             )
             return
         
-        self.history_list.insert(0, event.cmd)
+        self.history_list.appendleft(event.cmd)
         self.mutate_reactive(Shell.history_list)
         self.current_history_index = None
         
@@ -706,7 +706,7 @@ class Shell(Widget):
         """
         self.decide_to_show_suggestions()
         
-    def watch_history_list(self, history_list: List[str]) -> None:
+    def watch_history_list(self, history_list: deque[str]) -> None:
         """
         Watcher for when the history has been updated.
         
