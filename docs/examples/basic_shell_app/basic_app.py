@@ -39,8 +39,7 @@ class BasicShell(ShellApp):
             CommandList(self.command_names),
             Shell(
                 self.cmd_list,
-                prompt='xbsr <$ ',
-                suggestion_offset=Offset(10, 2)
+                prompt='xbsr <$ '
             ),
             SettingsDisplay(self.CONFIG_PATH),
             Container(),

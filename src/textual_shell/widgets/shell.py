@@ -242,7 +242,6 @@ class Shell(Widget):
     Args:
         commands (List[Command]): List of shell commands.
         prompt (str): prompt for the shell.
-        suggestion_offset (Offset): The offset to draw the suggestion.
         history_log (str): The path for the history log file. 
     """
     
@@ -313,7 +312,6 @@ class Shell(Widget):
         self,
         commands: Annotated[List[Command], 'List of Shell Commands'],
         prompt: Annotated[str, 'prompt for the shell.'],
-        suggestion_offset: Annotated[Offset, 'The Offset to draw the suggestions from the shell input']=Offset(0, 4),
         history_log: Annotated[str, 'The path to write the history log too.']=None,
         *args, **kwargs
     ) -> None:
@@ -321,7 +319,6 @@ class Shell(Widget):
         self.commands = commands
         self.command_list = [cmd.name for cmd in self.commands]
         self.prompt = prompt
-        self.suggestion_offset = suggestion_offset
         self.current_history_index = None
         
         for cmd in self.commands:
