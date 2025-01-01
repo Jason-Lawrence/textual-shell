@@ -1,4 +1,5 @@
 import os
+import logging
 from abc import ABC, abstractmethod
 from typing import Annotated, List
 
@@ -45,19 +46,20 @@ class Command(ABC):
         Args:
             command (str): The name of the command sending the log.
             msg (str): The log message.
-            severity (str): The level of the severity.
+            severity (int): The level of the severity.
             
         """
         def __init__(
             self,
             command: Annotated[str, 'The name of the command sending the log.'],
             msg: Annotated[str, 'The log message.'],
-            severity: Annotated[str, 'The level of the severity']
+            severity: Annotated[int, 'The level of the severity']
         ) -> None:
             super().__init__()
             self.command = command
             self.msg = msg
             self.severity = severity
+        
     
     def __init__(
         self,
@@ -66,6 +68,8 @@ class Command(ABC):
     ) -> None:
         self.name = self.__class__.__name__.lower()
         self.widget = widget
+        
+        
         
         if cmd_struct and not isinstance(cmd_struct, rx.PyDiGraph):
             raise ValueError('cmd_struct is not a PyDiGraph from rustworkx.')
@@ -383,7 +387,7 @@ class Set(Command):
             setting (str): The name of the setting.
             value (str): The value the setting was set to.
         """
-        self.send_log(f'Updating setting: {section}.{setting}', 'INFO')
+        self.send_log(f'Updating setting: {section}.{setting}', logging.INFO)
         configure.update_setting(section, setting, self.config_path, value)
     
     def settings_changed(

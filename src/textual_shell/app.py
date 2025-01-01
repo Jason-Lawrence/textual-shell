@@ -40,5 +40,5 @@ class ShellApp(App):
         event.stop()
         command_log = self.query_one(CommandLog)
         rich_log = command_log.query_one(RichLog)
-        log_entry = f'[{event.severity}] {event.command}:\t{event.msg}'
+        log_entry = command_log.gen_record(event)
         rich_log.write(log_entry)

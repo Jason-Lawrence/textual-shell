@@ -60,6 +60,5 @@ if __name__ == '__main__':
 * Command line validation
 * write documentation on Commands
 * write documentation on shell key binds
-* make Command Logging widget output pretty
 * redo suggestions location logic.
-* write default CSS
+
