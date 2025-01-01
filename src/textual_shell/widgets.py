@@ -3,13 +3,12 @@ from typing import Annotated, List
 from textual import events, work, log
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Grid, Container
+from textual.containers import Container
 from textual.geometry import Offset
 from textual.reactive import reactive
 from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import (
-    DataTable,
     Input, 
     Label,
     OptionList, 
@@ -233,60 +232,6 @@ class Suggestions(OptionList):
     def action_hide(self) -> None:
         """Hide the Suggestions"""
         self.post_message(self.Hide())
-        
-        
-class SettingsDisplay(Widget):
-    """Custom widget for displaying settings for the shell."""
-    
-    DEFAULT_CSS = """
-    
-        SettingsDisplay {
-            grid-size: 2;
-            grid-columns: 1fr;
-            grid-rows: auto 1fr;
-            border: solid white;
-            height: 15;
-                
-            Label {
-                text-align: center;
-                column-span: 2;
-            }
-            
-            DataTable {
-                column-span: 2;
-                border-top: solid white;
-            }
-        }
-    """
-    
-    def __init__(
-        self,
-        config_path: Annotated[str, 'THe path to the config file.']=None,
-        *args, **kwargs
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self.config_path = config_path
-        
-    def on_mount(self) -> None:
-        """Load the settings from the config on mount."""
-        table = self.query_one(DataTable)
-        table.can_focus = False
-        self.column_keys = table.add_columns('setting', 'value')
-        config = configure.get_config(self.config_path)
-        for section in config:
-            for key, val in config[section].items():
-                if key == 'description':
-                    continue
-                
-                setting = f'{section}.{key}'
-                value = val['value']
-                row = (setting, value)
-                table.add_row(*row, key=setting)
-                
-    def compose(self) -> ComposeResult:
-        yield Label('Settings')
-        yield DataTable()            
-        
 
 
 class Shell(Widget):
