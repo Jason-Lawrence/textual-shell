@@ -69,8 +69,6 @@ class Command(ABC):
         self.name = self.__class__.__name__.lower()
         self.widget = widget
         
-        
-        
         if cmd_struct and not isinstance(cmd_struct, rx.PyDiGraph):
             raise ValueError('cmd_struct is not a PyDiGraph from rustworkx.')
         

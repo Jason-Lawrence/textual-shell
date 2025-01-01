@@ -34,7 +34,7 @@ class ShellApp(App):
 
     def on_command_log(self, event: Command.Log) -> None:
         """
-        Catch and logs sent by any command and write 
+        Catch any logs sent by any command and write 
         them to the CommandLog widget.
         """
         event.stop()

@@ -31,13 +31,7 @@ class CommandList(Widget):
     
     Args:
         command_list (List[str]): List of commands for the custom shell.
-        cmd_label_id (str): CSS id for the Label.
-            Defaults to cmd-label.
-        cmd_list_id (str): CSS id for the TextArea.
-            Defaults to cmd-list.
-            
     """
-    
     DEFAULT_CSS = """
         CommandList {
             background: transparent;
@@ -148,8 +142,6 @@ class Prompt(Widget):
     
     Args:
         prompt (str): The prompt for the shell.
-        prompt_input_id (str): The CSS id for the prompt input.
-        prompt_label_id (str): The CSS id for the prompt label.
     """
     
     class CommandInput(Message):
@@ -358,11 +350,7 @@ class Shell(Widget):
     Args:
         commands (List[Command]): List of shell commands.
         prompt (str): prompt for the shell.
-        prompt_input_id (str): The CSS id for the prompt input.
-        prompt_label_id (str): The CSS id for the prompt label.
-        suggestion_id (str): The CSS id for the suggestion widget.
         suggestion_offset (Offset): The offset to draw the suggestion.
-        history_id (str): The CSS id for the rich log.
         history_log (str): The path for the history log file. 
     """
     
@@ -558,6 +546,12 @@ class Shell(Widget):
         self,
         event: PromptInput.AutoComplete
     ) -> None:
+        """
+        Handle auto complete request. 
+        
+        Args:
+            event (PromptInput.AutoComplete)
+        """
         event.stop()
         ol = self.query_one(Suggestions)
         if ol.option_count == 0 or not ol.visible:
@@ -571,10 +565,22 @@ class Shell(Widget):
         self.update_prompt_input(suggestion)
         
     def on_suggestions_cycle(self, event: Suggestions.Cycle) -> None:
+        """
+        Update the prompt input with the next suggestion.
+        
+        Args:
+            event (Suggestions.Cycle)
+        """
         event.stop()
         self.update_prompt_input(event.next)
         
     def on_suggestions_continue(self, event: Suggestions.Continue) -> None:
+        """
+        Add a space to the prompt_input and switch back focus.
+        
+        Args:
+            event (Suggestions.Continue)
+        """
         event.stop()
         prompt_input = self._get_prompt_input()
         prompt_input.value += ' '
@@ -582,19 +588,46 @@ class Shell(Widget):
         prompt_input.focus()
     
     def on_prompt_input_focus_change(self, event: PromptInput.FocusChange) -> None:
+        """
+        Handler for when the prompt_input has gained or lost focus.
+        
+        Args:
+            event (PromptInput.FocusChange)
+        """
         event.stop()
         self.is_prompt_focused = event.is_focused
         
     def on_prompt_input_show(self, event: PromptInput.Show) -> None:
+        """
+        Handler for showing the Suggestions.
+        
+        Args:
+            event (PromptInput.Show)
+        """
         event.stop()
         self.update_suggestions_location(event.cursor_position)
         self.show_suggestions = True
         
     def on_prompt_input_hide(self, event: PromptInput.Hide) -> None:
+        """
+        Handler for hiding the Suggestions.
+        
+        Args:
+            event (PromptInput.Hide)
+        """
         event.stop()
         self.show_suggestions = False
     
-    def get_suggestions(self, cmd_line) -> None:
+    def get_suggestions(
+        self,
+        cmd_line: Annotated[str, 'The input from the prompt.']
+    ) -> None:
+        """
+        Get the suggestions for the current state of the command line.
+        
+        Args:
+            cmd_line (str): The input from the prompt.
+        """
         cmd_input = cmd_line.split(' ')
         if len(cmd_input) == 1:
             val = cmd_input[0]
@@ -621,11 +654,24 @@ class Shell(Widget):
         self.update_suggestions(suggestions)
     
     def on_prompt_command_input(self, event: Prompt.CommandInput) -> None:
+        """
+        Handler for when the user has typed into the prompt.
+        
+        Args:
+            event (Prompt.CommandInput)
+        """
         event.stop()
         self.get_suggestions(event.cmd_input)
         self.update_suggestions_location(event.cursor_position)
         
     def on_prompt_command_entered(self, event: Prompt.CommandEntered) -> None:
+        """
+        Handler for when a command has been entered.
+        Execute the command in a worker thread.
+        
+        Args:
+            event (Prompt.CommandEntered)
+        """
         event.stop()
         if len(event.cmd.strip(' ')) == 0:
             return
@@ -668,10 +714,22 @@ class Shell(Widget):
         self.current_history_index = None
         
     def on_suggestions_focus_change(self, event: Suggestions.FocusChange) -> None:
+        """
+        Handler for when the focus on the Suggestions widget changes.
+        
+        Args:
+            event (Suggestions.FocusChange) 
+        """
         event.stop()
         self.are_suggestions_focused = event.is_focused
         
     def on_suggestions_hide(self, event: Suggestions.Hide) -> None:
+        """
+        Handler for hiding the Suggestions.
+        
+        Args:
+            event (Suggestions.Hide)
+        """
         event.stop()
         prompt_input = self._get_prompt_input()
         prompt_input.action_end()
@@ -679,6 +737,12 @@ class Shell(Widget):
         self.show_suggestions = False
         
     def on_suggestions_cancel(self, event: Suggestions.Cancel) -> None:
+        """
+        Handler for canceling the suggestion
+        
+        Args:
+            event (Suggestions.Cancel)
+        """
         event.stop()
         prompt_input = self._get_prompt_input()
         
@@ -694,6 +758,13 @@ class Shell(Widget):
         
     
     def toggle_suggestions(self, toggle: bool):
+        """
+        Handler for hiding or showing the suggestions pop up.
+        
+        Args:
+            toggle (bool): If True show the suggestions as long as there are
+                suggestions else False will hide them.
+        """
         ol = self.query_one(Suggestions)
         if not toggle:
             ol.visible = toggle
@@ -702,7 +773,10 @@ class Shell(Widget):
             ol.visible = toggle
         
     def decide_to_show_suggestions(self) -> None:
-        
+        """
+        Based on reactive attributes evaluate whether to show
+        or hide the suggestions.
+        """
         if self.show_suggestions:
             
             if self.is_prompt_focused or self.are_suggestions_focused:
@@ -715,15 +789,39 @@ class Shell(Widget):
             self.toggle_suggestions(False)
     
     def watch_is_prompt_focused(self, is_prompt_focused: bool) -> None:
+        """
+        Watcher for when the prompt gains or loses focus.
+        
+        Args:
+            is_prompt_focused (bool): The reactive attribute.
+        """
         self.decide_to_show_suggestions()
         
     def watch_are_suggestions_focused(self, are_suggestions_focused: bool) -> None:
+        """
+        Watcher for when the suggestions gains or lose focus.
+        
+        Ars:
+            are_suggestions_focused (bool): The reactive attribute.
+        """
         self.decide_to_show_suggestions()
             
-    def watch_show_suggestions(self, show: bool) -> None:
+    def watch_show_suggestions(self, show_suggestions: bool) -> None:
+        """
+        Watcher for when to show suggestions.
+        
+        Args:
+            show_suggestions (bool): The reactive attribute.
+        """
         self.decide_to_show_suggestions()
         
     def watch_history_list(self, history_list: List[str]) -> None:
+        """
+        Watcher for when the history has been updated.
+        
+        Args:
+            history_list (List[str]): The history of the command line.
+        """
         try:
             rich_log = self.query_one(RichLog)
             rich_log.write(f'{self.prompt}{history_list[0]}')
@@ -732,6 +830,9 @@ class Shell(Widget):
             return
         
     def action_clear_prompt(self) -> None:
+        """
+        When ctrl+c is pressed clear the command line.
+        """
         prompt_input = self._get_prompt_input()
         prompt_input.value = ''
         prompt_input.action_home()
@@ -745,6 +846,7 @@ class Shell(Widget):
         self.current_history_index = None
         
     def action_up_history(self):
+        """When the up arrow is hit cycle upwards through the history."""
         if len(self.history_list) == 0:
             return
         
@@ -763,6 +865,7 @@ class Shell(Widget):
         prompt_input.action_end()
     
     def action_down_history(self):
+        """When the down arrow key is pressed cycle downwards through the history."""
         if len(self.history_list) == 0:
             return
         
@@ -782,11 +885,32 @@ class Shell(Widget):
         
     @work(thread=True)   
     def execute_command(self, cmd: Command, *cmd_line):
+        """
+        Execute the command in a worker Thread.
+        
+        Args:
+            cmd (Command): The command to be executed.
+            cmd_line (*args): a list of positional arguments for the command.
+        """
         worker = get_current_worker()
         res = cmd.execute(*cmd_line)
 
 
 class CommandLog(Widget):
+    """
+    Custom widget to write logs from the commands.
+    The severity levels are the same as the logging module.
+    The different levels map to different colors for markup.
+    Command names are magenta1 and all uppercase.
+    
+    COLOR_MAPPING = {
+        logging.INFO: 'steel_blue1',
+        logging.DEBUG: 'green1',
+        logging.WARNING: 'yellow1',
+        logging.ERROR: 'bright_red',
+        logging.CRITICAL: 'dark_red'
+    }
+    """
     
     DEFAULT_CSS = """
         CommandLog {
@@ -823,6 +947,15 @@ class CommandLog(Widget):
         )
         
     def gen_record(self, event: Command.Log) -> str:
+        """
+        Handle the log from the command.
+        
+        Args:
+            event (Command.Log)
+            
+        Returns:
+            msg (str): The formatted log message.
+        """
         level_name = logging.getLevelName(event.severity)
         color = self.COLOR_MAPPING[event.severity]
         
