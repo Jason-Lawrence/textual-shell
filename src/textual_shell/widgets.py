@@ -1,4 +1,8 @@
+import logging
 from typing import Annotated, List
+from datetime import datetime
+
+from rich.logging import RichHandler
 
 from textual import events, work, log
 from textual.app import ComposeResult
@@ -804,8 +808,27 @@ class CommandLog(Widget):
         }
     """
     
+    COLOR_MAPPING = {
+        logging.INFO: 'steel_blue1',
+        logging.DEBUG: 'green1',
+        logging.WARNING: 'yellow1',
+        logging.ERROR: 'bright_red',
+        logging.CRITICAL: 'dark_red'
+    }
+    
     def compose(self) -> ComposeResult:
         yield Container(
             Label('Command Log'),
             RichLog(markup=True)
         )
+        
+    def gen_record(self, event: Command.Log) -> str:
+        level_name = logging.getLevelName(event.severity)
+        color = self.COLOR_MAPPING[event.severity]
+        
+        lvl = f'[{color}]{level_name}[/{color}]'
+        cmd = f'[bold magenta1]{event.command.upper()}[/bold magenta1]'
+        time = f"[steel_blue]{datetime.now().strftime('[%H:%M:%S]')}[/steel_blue]"
+        
+        msg = f'{time} {lvl}  {cmd} - {event.msg}'
+        return msg
