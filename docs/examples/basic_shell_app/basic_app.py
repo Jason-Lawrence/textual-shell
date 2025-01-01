@@ -7,7 +7,12 @@ from textual.widgets import Header, Footer
 
 from textual_shell.app import ShellApp
 from textual_shell.command import Help, Set
-from textual_shell.widgets import CommandList, Shell, SettingsDisplay, CommandLog
+from textual_shell.widgets import (
+    CommandList,
+    CommandLog,
+    SettingsDisplay,
+    Shell
+)
 
 class BasicShell(ShellApp):
     
