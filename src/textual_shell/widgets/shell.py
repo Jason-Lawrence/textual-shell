@@ -242,7 +242,6 @@ class Shell(Widget):
     Args:
         commands (List[Command]): List of shell commands.
         prompt (str): prompt for the shell.
-        suggestion_offset (Offset): The offset to draw the suggestion.
         history_log (str): The path for the history log file. 
     """
     
@@ -313,7 +312,6 @@ class Shell(Widget):
         self,
         commands: Annotated[List[Command], 'List of Shell Commands'],
         prompt: Annotated[str, 'prompt for the shell.'],
-        suggestion_offset: Annotated[Offset, 'The Offset to draw the suggestions from the shell input']=Offset(0, 4),
         history_log: Annotated[str, 'The path to write the history log too.']=None,
         *args, **kwargs
     ) -> None:
@@ -321,7 +319,6 @@ class Shell(Widget):
         self.commands = commands
         self.command_list = [cmd.name for cmd in self.commands]
         self.prompt = prompt
-        self.suggestion_offset = suggestion_offset
         self.current_history_index = None
         
         for cmd in self.commands:
@@ -348,8 +345,7 @@ class Shell(Widget):
         
     def on_mount(self):
         """Update the location and suggestions for auto-completions."""
-        prompt_input = self._get_prompt_input()
-        self.prompt_input_offset = prompt_input.offset
+        self.get_offset()
         self.update_suggestions(self.command_list)
         
     def compose(self) -> ComposeResult:
@@ -379,6 +375,14 @@ class Shell(Widget):
                 return command
             
         return None
+    
+    def get_offset(self) -> None:
+        """Calculate the offset for the cursor location."""
+        prompt_input = self._get_prompt_input()
+        self.prompt_input_offset = Offset(
+            prompt_input.offset.x + len(self.prompt) + 1,
+            prompt_input.offset.y + 2
+        )
         
     def update_suggestions(
         self,
@@ -410,8 +414,8 @@ class Shell(Widget):
         rich_log = self.query_one(RichLog)
         ol = self.query_one(Suggestions)
         ol.styles.offset = (
-            self.prompt_input_offset.x + cursor + self.suggestion_offset.x,
-            self.prompt_input_offset.y + self.suggestion_offset.y + min(
+            self.prompt_input_offset.x + cursor,
+            self.prompt_input_offset.y + min(
                 len(self.history_list), rich_log.styles.max_height.value
             )
         )
