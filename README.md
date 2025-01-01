@@ -18,16 +18,26 @@ import os
 
 from textual.app import ComposeResult
 from textual.containers import Grid
-from textual.geometry import Offset
 from textual.widgets import Header, Footer
 
 from textual_shell.app import ShellApp
 from textual_shell.command import Help, Set
-from textual_shell.widgets import CommandList, Shell, SettingsDisplay
+from textual_shell.widgets import (
+    CommandList,
+    CommandLog,
+    SettingsDisplay
+    Shell
 
 class BasicShell(ShellApp):
     
-    CSS_PATH = 'style.css'
+    CSS = """
+        Grid {
+            grid-size: 3;
+            grid-rows: 1fr;
+            grid-columns: 20 2fr 1fr;
+            width: 1fr;
+        }
+    """
     theme = 'tokyo-night'
         
     cmd_list = [Help(), Set()]
@@ -42,11 +52,12 @@ class BasicShell(ShellApp):
             CommandList(self.command_names),
             Shell(
                 self.cmd_list,
-                prompt='prompt <$ ',
-                suggestion_offset=Offset(10, 3)
+                prompt='prompt <$ '
             ),
             SettingsDisplay(self.CONFIG_PATH),
-            id='app-grid'
+            Container(),
+            Container(),
+            CommandLog()
         )
         
         
@@ -60,5 +71,3 @@ if __name__ == '__main__':
 * Command line validation
 * write documentation on Commands
 * write documentation on shell key binds
-* redo suggestions location logic.
-

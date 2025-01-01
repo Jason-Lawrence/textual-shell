@@ -2,7 +2,6 @@ import os
 
 from textual.app import ComposeResult
 from textual.containers import Grid, Container
-from textual.geometry import Offset
 from textual.widgets import Header, Footer
 
 from textual_shell.app import ShellApp
@@ -44,7 +43,7 @@ class BasicShell(ShellApp):
             SettingsDisplay(self.CONFIG_PATH),
             Container(),
             Container(),
-            CommandLog(),
+            CommandLog()
         )
         
         
