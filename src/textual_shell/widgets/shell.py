@@ -1,76 +1,25 @@
-import logging
 from typing import Annotated, List
-from datetime import datetime
 
-from rich.logging import RichHandler
-
-from textual import events, work, log
+from textual import events, work
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import Grid, Container
+from textual.containers import Container
 from textual.geometry import Offset
-from textual.reactive import reactive
 from textual.message import Message
+from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import (
-    DataTable,
-    Input, 
+    Input,
     Label,
-    OptionList, 
-    RichLog,
-    TextArea 
+    OptionList,
+    RichLog
 )
-from textual.worker import Worker, get_current_worker
+from textual.worker import get_current_worker
 
-from . import configure
-from .command import Command
 
-class CommandList(Widget):
-    """
-    Custom widget for listing commands for the shell.
-    
-    Args:
-        command_list (List[str]): List of commands for the custom shell.
-    """
-    DEFAULT_CSS = """
-        CommandList {
-            background: transparent;
-            border: round white;
-            height: auto;
-            width: 20;
-            layout: vertical;
-            
-            Label {
-                text-align: center;
-            }
-            
-            TextArea {
-                background: transparent;
-                border: none;
-                border-top: solid white;
-                text-align: center;
-            }
-        }
-    """
-    
-    def __init__(
-        self, 
-        command_list: Annotated[List[str], 'List of commands for the custom shell.'],
-    ) -> None:
-        self.commands = command_list
-        super().__init__()
-    
-    def on_mount(self):
-        ta = self.query_one(TextArea)
-        ta.can_focus = False
-    
-    def compose(self) -> ComposeResult:
-        yield Label('Commands')
-        yield TextArea(
-            '\n'.join(self.commands),
-            read_only=True
-        )
-        
+from ..command import Command
+
+
 class PromptInput(Input):
     """
     Custom Input widget for entering commands.
@@ -135,7 +84,7 @@ class PromptInput(Input):
         """Hide the Suggestions."""
         self.post_message(self.Hide())
         
-
+        
 class Prompt(Widget):
     """
     Custom Widget for Containing the Prompt Input and Label.
@@ -157,10 +106,7 @@ class Prompt(Widget):
         def __init__(self, cmd: str):
             super().__init__()
             self.cmd = cmd
-            
-    DEFAULT_CSS = """
-        
-    """
+
             
     cmd_input = reactive('')
     
@@ -204,8 +150,8 @@ class Prompt(Widget):
         prompt_input.value = ''
         prompt_input.action_home()
         self.post_message(self.CommandEntered(event.value))
-    
-
+        
+        
 class Suggestions(OptionList):
     """Widget for displaying the suggestion for auto-completions as a pop-up."""
     
@@ -284,60 +230,6 @@ class Suggestions(OptionList):
     def action_hide(self) -> None:
         """Hide the Suggestions"""
         self.post_message(self.Hide())
-        
-        
-class SettingsDisplay(Widget):
-    """Custom widget for displaying settings for the shell."""
-    
-    DEFAULT_CSS = """
-    
-        SettingsDisplay {
-            grid-size: 2;
-            grid-columns: 1fr;
-            grid-rows: auto 1fr;
-            border: solid white;
-            height: 15;
-                
-            Label {
-                text-align: center;
-                column-span: 2;
-            }
-            
-            DataTable {
-                column-span: 2;
-                border-top: solid white;
-            }
-        }
-    """
-    
-    def __init__(
-        self,
-        config_path: Annotated[str, 'THe path to the config file.']=None,
-        *args, **kwargs
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self.config_path = config_path
-        
-    def on_mount(self) -> None:
-        """Load the settings from the config on mount."""
-        table = self.query_one(DataTable)
-        table.can_focus = False
-        self.column_keys = table.add_columns('setting', 'value')
-        config = configure.get_config(self.config_path)
-        for section in config:
-            for key, val in config[section].items():
-                if key == 'description':
-                    continue
-                
-                setting = f'{section}.{key}'
-                value = val['value']
-                row = (setting, value)
-                table.add_row(*row, key=setting)
-                
-    def compose(self) -> ComposeResult:
-        yield Label('Settings')
-        yield DataTable()            
-        
 
 
 class Shell(Widget):
@@ -516,7 +408,6 @@ class Shell(Widget):
             cursor (int): The x location of the cursor.
         """
         rich_log = self.query_one(RichLog)
-        log(f'Max-height: {rich_log.styles.max_height}')
         ol = self.query_one(Suggestions)
         ol.styles.offset = (
             self.prompt_input_offset.x + cursor + self.suggestion_offset.x,
@@ -894,74 +785,3 @@ class Shell(Widget):
         """
         worker = get_current_worker()
         res = cmd.execute(*cmd_line)
-
-
-class CommandLog(Widget):
-    """
-    Custom widget to write logs from the commands.
-    The severity levels are the same as the logging module.
-    The different levels map to different colors for markup.
-    Command names are magenta1 and all uppercase.
-    
-    COLOR_MAPPING = {
-        logging.INFO: 'steel_blue1',
-        logging.DEBUG: 'green1',
-        logging.WARNING: 'yellow1',
-        logging.ERROR: 'bright_red',
-        logging.CRITICAL: 'dark_red'
-    }
-    """
-    
-    DEFAULT_CSS = """
-        CommandLog {
-            height: 50;
-            border: round white;
-            
-            Label {
-                text-align: center;
-                width: auto;
-            }
-            
-            RichLog {
-                height: auto;
-                max-height: 50;
-                border: none;
-                border-top: solid white;
-                background: transparent;
-            }
-        }
-    """
-    
-    COLOR_MAPPING = {
-        logging.INFO: 'steel_blue1',
-        logging.DEBUG: 'green1',
-        logging.WARNING: 'yellow1',
-        logging.ERROR: 'bright_red',
-        logging.CRITICAL: 'dark_red'
-    }
-    
-    def compose(self) -> ComposeResult:
-        yield Container(
-            Label('Command Log'),
-            RichLog(markup=True)
-        )
-        
-    def gen_record(self, event: Command.Log) -> str:
-        """
-        Handle the log from the command.
-        
-        Args:
-            event (Command.Log)
-            
-        Returns:
-            msg (str): The formatted log message.
-        """
-        level_name = logging.getLevelName(event.severity)
-        color = self.COLOR_MAPPING[event.severity]
-        
-        lvl = f'[{color}]{level_name}[/{color}]'
-        cmd = f'[bold magenta1]{event.command.upper()}[/bold magenta1]'
-        time = f"[steel_blue]{datetime.now().strftime('[%H:%M:%S]')}[/steel_blue]"
-        
-        msg = f'{time} {lvl}  {cmd} - {event.msg}'
-        return msg
