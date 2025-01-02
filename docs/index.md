@@ -1,4 +1,4 @@
-# Textual-Shell
+# Textual Shell
 
 Welcome to the Textual-Shell documentation! This is an addon for the Textual framework.
 
@@ -42,6 +42,6 @@ Logging:
 
 ## TODO:
 
-* Command line validation
-* write documentation on Commands
-* write documentation on shell key binds
+* [ ] Command line validation
+* [x] write documentation on Commands
+* [ ] write documentation on shell key binds
