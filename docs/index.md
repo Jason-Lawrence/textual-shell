@@ -40,8 +40,7 @@ Logging:
         value: '\%(levelname)s\t\%(message)s'
 ```
 
-## TODO:
+### TODO
 
-* [ ] Command line validation
-* [x] write documentation on Commands
+* [ ] write documentation on Commands
 * [ ] write documentation on shell key binds

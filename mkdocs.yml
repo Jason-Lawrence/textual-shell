@@ -41,3 +41,9 @@ nav:
     - COMMAND: commands/command.md
 
   - Implement Your Own: custom_commands.md
+
+  - Reference:
+    - reference/index.md
+    - textual_shell.configure: reference/configure.md
+    - textual_shell.app: reference/shell_app.md
+
