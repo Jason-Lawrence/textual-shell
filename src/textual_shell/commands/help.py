@@ -5,6 +5,8 @@ from textual.containers import Grid
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Markdown
 
+from .command import Command, CommandArgument
+
 
 class HelpScreen(ModalScreen):
     """
@@ -13,14 +15,6 @@ class HelpScreen(ModalScreen):
     
     Args:
         help_text (str): The help text to display.
-        help_label_id (str): The CSS id for the Label. 
-            Defaults to help-label.
-        help_button_id (str): The CSS id for the Button. 
-            Defaults to help-close.
-        help_display_id (str): The CSS id for the Markdown. 
-            Defaults to help-display.
-        help_dialog_id (str): The CSS id for the Grid Container. 
-            Defaults to help-dialog.
     """
     
     DEFAULT_CSS = """
@@ -64,28 +58,55 @@ class HelpScreen(ModalScreen):
     
     def __init__(
         self,
-        help_text: Annotated[str, 'The help text to display in the modal'],
-        help_label_id: Annotated[str, 'CSS id for the Label']='help-label',
-        help_button_id: Annotated[str, 'CSS id for the Button']='help-close',
-        help_display_id: Annotated[str, 'CSS id for the Markdown']='help-display',
-        help_dialog_id: Annotated[str, 'CSS id for the Grid Container']='help-dialog'
+        help_text: Annotated[str, 'The help text to display in the modal']
     ) -> None:
         super().__init__()
         self.help_text = help_text
-        self.help_label_id = help_label_id
-        self.help_button_id = help_button_id
-        self.help_display_id = help_display_id
-        self.help_dialog_id = help_dialog_id
     
     def compose(self) -> ComposeResult:
         yield Grid(
-            Label('Help', id=self.help_label_id),
-            Button('X', variant='error', id=self.help_button_id),
-            Markdown(self.help_text, id=self.help_display_id),
-            id=self.help_dialog_id
+            Label('Help'),
+            Button('X', variant='error', id='close-button'),
+            Markdown(self.help_text),
         )
         
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Close help modal."""
-        if event.button.id == self.help_button_id:
+        if event.button.id == 'close-button':
             self.app.pop_screen()
+
+
+class Help(Command):
+    """
+    Display the help for a given command
+    
+    Examples:
+        help <command>
+    """
+    def __init__(self) -> None:
+        super().__init__()
+        arg = CommandArgument('help', 'Show help for commands')
+        self.add_argument_to_cmd_struct(arg)
+        
+    def help(self):
+        """Generate the help text for the help command."""
+        root = self.cmd_struct.get_node_data(0)
+        help_text = f'### Command: {root.name}\n'
+        help_text += f'**Description:** {root.description}'
+        return help_text
+    
+    def execute(
+        self,
+        cmd: Command
+    ) -> Annotated[ModalScreen, 'A help screen to show as a modal.']:
+        """
+        execute the help for whatever command was requested.
+        
+        Args:
+            cmd (Command): The requested command.
+            
+        Returns:
+            help_screen (HelpScreen): A modal for the app to render.
+        """
+        help_text = cmd.help()
+        return HelpScreen(help_text)
