@@ -17,7 +17,7 @@ from textual.widgets import (
 )
 from textual.worker import get_current_worker
 
-from ..command import Command
+from ..commands import Command
 
 
 class PromptInput(Input):

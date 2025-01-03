@@ -3,7 +3,7 @@ from textual.app import App
 from textual.css.query import NoMatches
 from textual.widgets import DataTable, RichLog
 
-from textual_shell.command import Set, Command
+from textual_shell.commands import Set, Command
 from textual_shell.widgets import SettingsDisplay, CommandLog
 
 

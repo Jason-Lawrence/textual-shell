@@ -5,7 +5,7 @@ from textual.containers import Grid, Container
 from textual.widgets import Header, Footer
 
 from textual_shell.app import ShellApp
-from textual_shell.command import Help, Set
+from textual_shell.commands import Help, Set
 from textual_shell.widgets import (
     CommandList,
     CommandLog,
@@ -16,13 +16,15 @@ from textual_shell.widgets import (
 class BasicShell(ShellApp):
     
     CSS = """
-        Grid {
+        #app-grid {
             grid-size: 3;
             grid-rows: 1fr;
             grid-columns: 20 2fr 1fr;
             width: 1fr;
         }
     """
+    
+    #CSS_PATH = 'style.css'
     
     theme = 'tokyo-night'
         
@@ -43,7 +45,8 @@ class BasicShell(ShellApp):
             SettingsDisplay(self.CONFIG_PATH),
             Container(),
             Container(),
-            CommandLog()
+            CommandLog(),
+            id='app-grid'
         )
         
         
