@@ -5,7 +5,7 @@ from textual.containers import Grid, Container
 from textual.widgets import Header, Footer
 
 from textual_shell.app import ShellApp
-from textual_shell.command import Help, Set
+from textual_shell.commands import Help, Set
 from textual_shell.widgets import (
     CommandList,
     CommandLog,
