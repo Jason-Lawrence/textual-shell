@@ -111,4 +111,4 @@ class Help(Command):
             help_screen (HelpScreen): A modal for the app to render.
         """
         help_text = cmd.help()
-        return HelpScreen(help_text)
+        self.send_screen(HelpScreen(help_text))
