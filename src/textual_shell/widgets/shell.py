@@ -581,8 +581,7 @@ class Shell(Widget):
                     return
                 
                 if show_help := self.get_cmd_obj(cmd_line[0]):
-                    help_screen = cmd.execute(show_help)
-                    self.app.push_screen(help_screen)
+                    cmd.execute(show_help)
                     
                 else:
                     self.notify(

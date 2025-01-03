@@ -3,8 +3,16 @@ from abc import ABC, abstractmethod
 
 import rustworkx as rx
 
+from textual.app import ComposeResult
+from textual.containers import Center
 from textual.message import Message
+from textual.screen import Screen
 from textual.widget import Widget
+from textual.widgets import (
+    Label,
+    LoadingIndicator,
+    Static
+)
 
 
 class CommandArgument:
@@ -30,8 +38,37 @@ class CommandArgument:
         return f'{self.name}: {self.description}'
     
     
+class CommandScreen(Screen):
+    """Base Screen for commands to output too."""
+    
+    def __init__(
+        self, 
+        cmd_name: Annotated[str, 'The name of the command'],
+        *args, **kwargs
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.cmd_name = cmd_name
+    
+    def compose(self) -> ComposeResult:
+        yield Center(Label(self.cmd_name.upper()))
+        yield Center(LoadingIndicator())
+        yield Center(Static(f'{self.cmd_name} is currently running.'))
+        
+    
 class Command(ABC):
     """Base class for the Commands for the shell widget."""
+    
+    class PushScreen(Message):
+        """
+        Default Message for pushing a new screen onto the app.
+        
+        Args:
+            screen (Screen): The output screen for the command.
+        """
+        def __init__(self, screen) -> None:
+            super().__init__()
+            self.screen = screen
+            
     
     class Log(Message):
         """
@@ -227,7 +264,13 @@ class Command(ABC):
         """
         self.widget.post_message(self.Log(self.name, msg, severity))
                 
-        
+    def send_screen(
+        self,
+        screen: Annotated[Screen, 'The output screen'],
+    ) -> None:
+        """Send an output screen"""
+        self.widget.post_message(self.PushScreen(screen))
+
     @abstractmethod
     def execute(self):
         """

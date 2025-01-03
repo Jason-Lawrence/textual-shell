@@ -42,3 +42,10 @@ class ShellApp(App):
         rich_log = command_log.query_one(RichLog)
         log_entry = command_log.gen_record(event)
         rich_log.write(log_entry)
+        
+    def on_command_push_screen(self, event: Command.PushScreen) -> None:
+        """
+        Push the screen for the output of the command.
+        """
+        event.stop()
+        self.push_screen(event.screen)
