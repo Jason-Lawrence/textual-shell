@@ -16,45 +16,49 @@ class HelpScreen(ModalScreen):
     Args:
         help_text (str): The help text to display.
     """
-    
     DEFAULT_CSS = """
-        HelpScreen {
-            align: center middle;
-            height: 50;
-        }
+            
+            HelpScreen {
+                align: center middle;                
+                height: 90;
+                width: 50;
+                
+            }
+            
+            #help-dialog {
+                grid-size: 3;
+                grid-rows: 3 1fr 1fr;
+                grid-columns: 1fr 1fr 3;
+                background: $surface;
+                border: solid white;
+                padding: 0;
+            }
+                
+            #help-label {
+                column-span: 2;
+                row-span: 1;
+                text-align: center;
+                width: 100%;
+                offset: 0 1;
+                
+            }
         
-        HelpScreen Grid {
-            grid-size: 3;
-            grid-rows: 2 40;
-            grid-columns: 1fr 1fr 4;
-            width: 80;
-            height: auto;
-            background: $surface;
-            border: solid white;
-        }
-        
-        HelpScreen Grid Label {
-            column-span: 2;
-            content-align: center middle;
-            width: 1fr;
-            offset: 1 0;
-        }
-        
-        HelpScreen Grid Button {
-            column-span: 1;
-            text-align: center;
-            padding: 0;
-            margin: 0;
-        }
-        
-        HelpScreen Grid Markdown {
-            column-span: 3;
-            row-span: 2;
-            content-align: center middle;
-            border-top: solid white;
-        }
-        
-    """
+            #help-close {
+                column-span: 1;
+                row-span: 1;
+                padding: 0;
+                margin: 0;
+            }
+            
+            #help-display {
+                column-span: 3;
+                row-span: 2;
+                margin: 0;
+                padding: 1;
+                border-top: solid white;
+            }
+
+        """
     
     def __init__(
         self,
@@ -65,9 +69,10 @@ class HelpScreen(ModalScreen):
     
     def compose(self) -> ComposeResult:
         yield Grid(
-            Label('Help'),
+            Label('Help', id='help-label'),
             Button('X', variant='error', id='close-button'),
-            Markdown(self.help_text),
+            Markdown(self.help_text, id='help-display'),
+            id='help-dialog'
         )
         
     def on_button_pressed(self, event: Button.Pressed) -> None:

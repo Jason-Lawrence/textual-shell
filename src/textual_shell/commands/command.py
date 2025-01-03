@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 from abc import ABC, abstractmethod
 
 import rustworkx as rx
@@ -9,7 +9,7 @@ from textual.widget import Widget
 
 class CommandArgument:
     """
-    Used as nodes for the rustworkx.PyDiGraph"
+    Used as nodes for the rustworkx.PyDiGraph
     
     Args:
         name (str): The name of the command or sub-command.

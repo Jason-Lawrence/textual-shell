@@ -6,7 +6,7 @@ from textual.containers import Container
 from textual.widget import Widget
 from textual.widgets import Label, RichLog
 
-from ..command import Command
+from ..commands import Command
 
 class CommandLog(Widget):
     """
