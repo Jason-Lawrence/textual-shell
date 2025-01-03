@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from textual.app import ComposeResult
-from textual.containers import Grid
+from textual.containers import Grid, Container
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Markdown
 
@@ -16,49 +16,46 @@ class HelpScreen(ModalScreen):
     Args:
         help_text (str): The help text to display.
     """
+    
     DEFAULT_CSS = """
+        HelpScreen {
+            align: center middle;
             
-            HelpScreen {
-                align: center middle;                
-                height: 90;
-                width: 50;
-                
-            }
-            
-            #help-dialog {
-                grid-size: 3;
-                grid-rows: 3 1fr 1fr;
-                grid-columns: 1fr 1fr 3;
-                background: $surface;
-                border: solid white;
-                padding: 0;
-            }
-                
-            #help-label {
-                column-span: 2;
-                row-span: 1;
-                text-align: center;
-                width: 100%;
-                offset: 0 1;
-                
-            }
-        
-            #help-close {
-                column-span: 1;
-                row-span: 1;
-                padding: 0;
-                margin: 0;
-            }
-            
-            #help-display {
-                column-span: 3;
-                row-span: 2;
-                margin: 0;
-                padding: 1;
-                border-top: solid white;
-            }
+        }
 
-        """
+        #help-dialog {
+            height: 60%;
+            width: 50%;
+            grid-size: 3;
+            grid-rows: 3 1fr 1fr;
+            grid-columns: 1fr 1fr 3;
+            background: $surface;
+            border: solid white;
+            padding: 0;
+        }
+            
+        #help-label {
+            column-span: 2;
+            row-span: 1;
+            text-align: center;
+            width: 100%;
+            offset: 0 1;
+            
+        }
+
+        #help-close {
+            padding: 0;
+            margin: 0;
+        }
+
+        #help-display {
+            column-span: 3;
+            row-span: 2;
+            margin: 0;
+            padding: 1;
+            border-top: solid white;
+        }
+    """
     
     def __init__(
         self,
