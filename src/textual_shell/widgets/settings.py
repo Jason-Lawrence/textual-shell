@@ -62,6 +62,7 @@ class SettingsDisplay(Widget):
                 table.add_row(*row, key=setting)
                 
     def reload(self) -> None:
+        """Reload the DataTable if config has changed."""
         table = self.query_one(DataTable)
         table.clear()
         self.load_settings()

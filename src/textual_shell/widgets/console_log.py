@@ -4,6 +4,7 @@ from datetime import datetime
 
 from textual.app import ComposeResult
 from textual.containers import Container
+from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Label, RichLog
 
@@ -25,6 +26,11 @@ class ConsoleLog(Widget):
         logging.CRITICAL: 'dark_red'
     }
     """
+    
+    class Reload(Message):
+        """Message to Reload both the Set command and settings display"""
+        pass
+    
     COLOR_MAPPING = {
         logging.INFO: 'steel_blue1',
         logging.DEBUG: 'green1',
@@ -90,7 +96,8 @@ class ConsoleLog(Widget):
                 'Logging',
                 self.DEFAULT_CONFIG,
                 self.config_path
-        )
+            )
+            self.post_message(self.Reload())
             
         
     def check_log_level(self, severity: int):
