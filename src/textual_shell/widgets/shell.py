@@ -571,7 +571,7 @@ class Shell(Widget):
         if len(event.cmd.strip(' ')) == 0:
             return
         
-        cmd_line = event.cmd.split(' ')
+        cmd_line = event.cmd.strip().split(' ')
         cmd_name = cmd_line.pop(0)
             
         if cmd := self.get_cmd_obj(cmd_name):
@@ -603,7 +603,7 @@ class Shell(Widget):
             )
             return
         
-        self.history_list.appendleft(event.cmd)
+        self.history_list.appendleft(event.cmd.strip())
         self.mutate_reactive(Shell.history_list)
         self.current_history_index = None
         

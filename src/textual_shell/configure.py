@@ -5,7 +5,8 @@ import yaml
 
 
 def create_config(
-    path: Annotated[str, 'The path to create the config file.']
+    path: Annotated[str, 'The path to create the config file.'],
+    config: Annotated[dict[str, str], 'Settings']={}
 ) -> None:
     """
     Create a default config for the application.
@@ -15,7 +16,7 @@ def create_config(
     """
     if not os.path.exists(path):
         with open(path, 'w') as config_file:
-            yaml.dump({}, config_file)
+            yaml.dump(config, config_file)
 
 def get_config(
     path: Annotated[str, 'The path to the config file.']
@@ -69,7 +70,14 @@ def get_setting_description(
     """
     setting = get_setting(section, setting, path)
     return setting.get('description')
-      
+
+def get_setting_options(
+    section: Annotated[str, 'The section of the config.'],
+    setting: Annotated[str, 'The setting to get.'],
+    path: Annotated[str, 'The path to the config file.']
+) -> (list[str] | dict[str, str]):
+    setting = get_setting(section, setting, path)
+    return setting.get('options', None)
 
 def get_setting(
     section: Annotated[str, 'The section of the config.'],
@@ -90,20 +98,28 @@ def get_setting(
     config = get_config(path)
     return config.get(section, {}).get(setting, None)
 
+def check_section(
+    section: Annotated[str, 'The name of the section.'],
+    path: Annotated[str, 'The path to create the config file.'],
+) -> dict:
+    config = get_config(path)
+    return section in config
+
 def add_section(
-    section: Annotated[str, 'Section Name'],
+    section_name: Annotated[str, 'The section key'],
+    section: Annotated[dict[str, str], 'Section config'],
     path: Annotated[str, 'The path to the config file.']
 ) -> None:
     """
     Add a section to the config.
     
     Args:
-        section (str): The section name.
+        section (dict[str, str]): The section name.
         path (str): The path to the config
     """
     config = get_config(path)
-    if section not in config:
-        config[section] = {}
+    if section_name not in config:
+        config.update(section)
     
     with open(path, 'w') as config_file:
         yaml.dump(config, config_file)

@@ -1,4 +1,4 @@
-from .command_log import CommandLog
+from .console_log import ConsoleLog
 from .command_list import CommandList
 from .settings import SettingsDisplay
 from .shell import (
@@ -11,7 +11,7 @@ from .shell import (
 
 __all__ = [
     'CommandList',
-    'CommandLog',
+    'ConsoleLog',
     'Prompt',
     'PromptInput',
     'Shell',

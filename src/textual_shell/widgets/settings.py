@@ -42,12 +42,14 @@ class SettingsDisplay(Widget):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.config_path = config_path
+                
+    def compose(self) -> ComposeResult:
+        yield Label('Settings')
+        yield DataTable()
         
-    def on_mount(self) -> None:
+    def load_settings(self) -> None:
         """Load the settings from the config on mount."""
         table = self.query_one(DataTable)
-        table.can_focus = False
-        self.column_keys = table.add_columns('setting', 'value')
         config = configure.get_config(self.config_path)
         for section in config:
             for key, val in config[section].items():
@@ -59,6 +61,14 @@ class SettingsDisplay(Widget):
                 row = (setting, value)
                 table.add_row(*row, key=setting)
                 
-    def compose(self) -> ComposeResult:
-        yield Label('Settings')
-        yield DataTable()
+    def reload(self) -> None:
+        """Reload the DataTable if config has changed."""
+        table = self.query_one(DataTable)
+        table.clear()
+        self.load_settings()
+        
+    def on_mount(self) -> None:
+        table = self.query_one(DataTable)
+        table.can_focus = False
+        self.column_keys = table.add_columns('setting', 'value')
+        self.load_settings()

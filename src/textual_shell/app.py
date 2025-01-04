@@ -4,7 +4,9 @@ from textual.css.query import NoMatches
 from textual.widgets import DataTable, RichLog
 
 from textual_shell.commands import Set, Command
-from textual_shell.widgets import SettingsDisplay, CommandLog
+from textual_shell.widgets import (
+    ConsoleLog, SettingsDisplay, Shell
+)
 
 
 class ShellApp(App):
@@ -14,7 +16,7 @@ class ShellApp(App):
             Screen {
                 layers: shell popup;
             }
-        """    
+        """
     
     def on_set_settings_changed(self, event: Set.SettingsChanged) -> None:
         """
@@ -31,6 +33,21 @@ class ShellApp(App):
             
         except NoMatches as e:
             log(f'SettingsDisplay widget is not in the DOM.')
+            
+    def on_console_log_reload(self, event: ConsoleLog.Reload) -> None:
+        """Handle Reloading the settings."""
+        event.stop()
+        shell = self.query_one(Shell)
+        if set := shell.get_cmd_obj('set'):
+            set.cmd_struct.clear()
+            set._load_sections_into_struct()
+        
+        try:
+            settings_display = self.query_one(SettingsDisplay)
+            settings_display.reload()
+            
+        except NoMatches as e:
+            log(f'SettingsDisplay widget is not in the DOM.')
 
     def on_command_log(self, event: Command.Log) -> None:
         """
@@ -38,10 +55,15 @@ class ShellApp(App):
         them to the CommandLog widget.
         """
         event.stop()
-        command_log = self.query_one(CommandLog)
-        rich_log = command_log.query_one(RichLog)
-        log_entry = command_log.gen_record(event)
-        rich_log.write(log_entry)
+        try:
+            command_log = self.query_one(ConsoleLog)
+            rich_log = command_log.query_one(RichLog)
+            log_entry = command_log.gen_record(event)
+            if log_entry:
+                rich_log.write(log_entry)
+        
+        except NoMatches as e:
+            log(f'Console Log not found')
         
     def on_command_push_screen(self, event: Command.PushScreen) -> None:
         """

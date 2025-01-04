@@ -1,0 +1,11 @@
+Logging:
+  console-lvl:
+    description: The minimum severity level for the console log.
+    options:
+      CRITICAL: 50
+      DEBUG: 10
+      ERROR: 40
+      INFO: 20
+      WARNING: 30
+    value: INFO
+  description: The config for logging.
