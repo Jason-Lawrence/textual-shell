@@ -75,11 +75,26 @@ class Set(Command):
                 if setting == 'description':
                     continue
                 
-                self._add_section_to_struct(
+                node = self._add_section_to_struct(
                     setting,
                     data[section][setting]['description'],
                     parent
                 )
+                
+                self._add_options(node, section, setting)
+    
+    def _add_options(self, node, section, setting) -> None:
+        options = configure.get_setting_options(section, setting, self.config_path)
+        
+        if options is None:
+            return
+        
+        elif isinstance(options, dict):
+            options = list(options.keys())
+            
+        
+        for option in options:
+            self._add_section_to_struct(option, None, node)
             
     def _add_section_to_struct(
         self,
@@ -115,6 +130,12 @@ class Set(Command):
             setting (str): The name of the setting.
             value (str): The value the setting was set to.
         """
+        options = configure.get_setting_options(section, setting, self.config_path)
+            
+        if value is not None and value not in options:
+            self.send_log(f'Invalid value: {value} for {section}.{setting}' ,logging.ERROR)
+            return
+        
         self.send_log(f'Updating setting: {section}.{setting}', logging.INFO)
         configure.update_setting(section, setting, self.config_path, value)
     
