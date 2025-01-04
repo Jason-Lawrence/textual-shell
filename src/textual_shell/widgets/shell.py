@@ -189,12 +189,17 @@ class Suggestions(OptionList):
         """Cancel the suggestion and undo the auto-completion."""
         pass
     
+    class Execute(Message):
+        """Append the suggestion and execute the command"""
+        pass
+    
     
     BINDINGS = [
         Binding('backspace', 'cancel_completion', 'Cancel Autocompletion'),
         Binding('tab', 'cycle', 'Cycle autocompletion', priority=True),
-        Binding('space', 'continue', 'Select autocompletion'),
-        Binding('escape', 'hide', 'Hide autosuggestion')
+        Binding('space', 'continue', 'Select suggestion'),
+        Binding('escape', 'hide', 'Hide autosuggestion'),
+        Binding('enter', 'enter_command', 'Select the suggestion and execute the command.', show=False)
     ]
 
     def on_focus(self, event: events.Focus) -> None:
@@ -230,6 +235,9 @@ class Suggestions(OptionList):
     def action_hide(self) -> None:
         """Hide the Suggestions"""
         self.post_message(self.Hide())
+    
+    def action_enter_command(self) -> None:
+        self.post_message(self.Execute())
 
 
 class Shell(Widget):
@@ -481,6 +489,20 @@ class Shell(Widget):
         prompt_input.value += ' '
         prompt_input.action_end()
         prompt_input.focus()
+        
+    def on_suggestions_execute(self, event: Suggestions.Execute) -> None:
+        """
+        Execute the command.
+        
+        Args:
+            event (Suggestions.Execute)
+        """
+        event.stop()
+        prompt_input = self._get_prompt_input()
+        self.command_entered(prompt_input.value)
+        prompt_input.value = ''
+        prompt_input.action_home()
+        prompt_input.focus()
     
     def on_prompt_input_focus_change(self, event: PromptInput.FocusChange) -> None:
         """
@@ -559,28 +581,22 @@ class Shell(Widget):
         self.get_suggestions(event.cmd_input)
         self.update_suggestions_location(event.cursor_position)
         
-    def on_prompt_command_entered(self, event: Prompt.CommandEntered) -> None:
-        """
-        Handler for when a command has been entered.
-        Execute the command in a worker thread.
+    def command_entered(self, cmdline):
         
-        Args:
-            event (Prompt.CommandEntered)
-        """
-        event.stop()
-        if len(event.cmd.strip(' ')) == 0:
+        cmdline = cmdline.strip(' ')
+        if len(cmdline) == 0:
             return
         
-        cmd_line = event.cmd.strip().split(' ')
-        cmd_name = cmd_line.pop(0)
+        cmd_args = cmdline.split(' ')
+        cmd_name = cmd_args.pop(0)
             
         if cmd := self.get_cmd_obj(cmd_name):
             
             if cmd.name == 'help':
-                if len(cmd_line) == 0:
+                if len(cmd_args) == 0:
                     return
                 
-                if show_help := self.get_cmd_obj(cmd_line[0]):
+                if show_help := self.get_cmd_obj(cmd_args[0]):
                     cmd.execute(show_help)
                     
                 else:
@@ -592,7 +608,7 @@ class Shell(Widget):
                     )
                     
             else:
-                self.execute_command(cmd, *cmd_line)
+                self.execute_command(cmd, *cmd_args)
         
         else:
             self.notify(
@@ -603,9 +619,20 @@ class Shell(Widget):
             )
             return
         
-        self.history_list.appendleft(event.cmd.strip())
+        self.history_list.appendleft(cmdline)
         self.mutate_reactive(Shell.history_list)
         self.current_history_index = None
+        
+    def on_prompt_command_entered(self, event: Prompt.CommandEntered) -> None:
+        """
+        Handler for when a command has been entered.
+        Execute the command in a worker thread.
+        
+        Args:
+            event (Prompt.CommandEntered)
+        """
+        event.stop()
+        self.command_entered(event.cmd)
         
     def on_suggestions_focus_change(self, event: Suggestions.FocusChange) -> None:
         """
