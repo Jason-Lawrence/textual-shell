@@ -54,20 +54,18 @@ class Set(Command):
             config_dir = os.environ.get('HOME', os.getcwd())
             self.config_path = os.path.join(config_dir, '.config.yaml')
             
-        arg = CommandArgument('set', 'Set new shell variables.')
-        root_index = self.add_argument_to_cmd_struct(arg)
-        self._load_sections_into_struct(root_index)
+        self._load_sections_into_struct()
         
-    def _load_sections_into_struct(
-        self,
-        root_index: Annotated[int, 'The index of the root node.']
-    ) -> None:
+    def _load_sections_into_struct(self) -> None:
         """
         Load the settings from the config file into the command digraph.
         
         Args:
             root_index (int): The index of the root node.
         """
+        arg = CommandArgument('set', 'Set new shell variables.')
+        root_index = self.add_argument_to_cmd_struct(arg)
+        
         data = configure.get_config(self.config_path)
         for section in data:
             parent = self._add_section_to_struct(section, data[section]['description'], parent=root_index)
