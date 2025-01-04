@@ -29,7 +29,7 @@ nav:
   - Widgets:
     - widgets/index.md
     - CommandList: widgets/command_list.md
-    - CommandLog: widgets/command_log.md
+    - ConsoleLog: widgets/console_log.md
     - Prompt: widgets/prompt.md
     - Shell: widgets/shell.md
     - Suggestions: widgets/suggestions.md
