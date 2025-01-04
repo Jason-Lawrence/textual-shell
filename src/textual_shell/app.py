@@ -4,7 +4,9 @@ from textual.css.query import NoMatches
 from textual.widgets import DataTable, RichLog
 
 from textual_shell.commands import Set, Command
-from textual_shell.widgets import SettingsDisplay, ConsoleLog
+from textual_shell.widgets import (
+    ConsoleLog, SettingsDisplay, Shell
+)
 
 
 class ShellApp(App):
@@ -15,8 +17,6 @@ class ShellApp(App):
                 layers: shell popup;
             }
         """
-        
-    
     
     def on_set_settings_changed(self, event: Set.SettingsChanged) -> None:
         """
@@ -30,6 +30,21 @@ class ShellApp(App):
             row_key = f'{event.section_name}.{event.setting_name}'
             column_key = settings_display.column_keys[1]
             table.update_cell(row_key, column_key, event.value, update_width=True)
+            
+        except NoMatches as e:
+            log(f'SettingsDisplay widget is not in the DOM.')
+            
+    def on_console_log_reload(self, event: ConsoleLog.Reload) -> None:
+        """Handle Reloading the settings."""
+        event.stop()
+        shell = self.query_one(Shell)
+        if set := shell.get_cmd_obj('set'):
+            set.cmd_struct.clear()
+            set._load_sections_into_struct()
+        
+        try:
+            settings_display = self.query_one(SettingsDisplay)
+            settings_display.reload()
             
         except NoMatches as e:
             log(f'SettingsDisplay widget is not in the DOM.')
