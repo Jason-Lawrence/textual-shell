@@ -71,3 +71,16 @@ class ShellApp(App):
         """
         event.stop()
         self.push_screen(event.screen)
+        
+    def on_command_start(self, event: Command.Start) -> None:
+        """Catch when a command has started."""
+        shell = self.query_one(Shell)
+        prompt_input = shell._get_prompt_input()
+        prompt_input.disabled = True
+        
+    def on_command_finish(self, event: Command.Finish) -> None:
+        """Catch when a command has finished."""
+        shell = self.query_one(Shell)
+        prompt_input = shell._get_prompt_input()
+        prompt_input.disabled = False
+        prompt_input.focus()

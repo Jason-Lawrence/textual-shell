@@ -61,7 +61,7 @@ class Shell(BaseShell):
     """
     
     def command_entered(self, cmdline):
-        
+        """"""
         cmdline = cmdline.strip(' ')
         if len(cmdline) == 0:
             return

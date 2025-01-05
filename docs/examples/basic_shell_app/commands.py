@@ -1,4 +1,4 @@
-from time import monotonic
+from time import monotonic, sleep
 
 from textual.app import ComposeResult
 from textual.containers import HorizontalGroup, VerticalScroll
@@ -172,3 +172,16 @@ class Timer(Command):
         
     def execute(self):
         self.send_screen(TimerScreen())
+
+
+class Sleep(Command):
+    
+    def __init__(self) -> None:
+        super().__init__()
+        arg = CommandArgument('sleep', 'Sleep for x seconds')
+        self.add_argument_to_cmd_struct(arg)
+        
+    def execute(self, seconds):
+        self.widget.post_message(self.Start())
+        sleep(int(seconds))
+        self.widget.post_message(self.Finish())
