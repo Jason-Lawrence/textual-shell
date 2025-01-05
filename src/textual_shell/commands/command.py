@@ -58,6 +58,14 @@ class CommandScreen(Screen):
 class Command(ABC):
     """Base class for the Commands for the shell widget."""
     
+    class Start(Message):
+        """Default message to notify the app that a command has started."""
+        pass
+    
+    class Finish(Message):
+        """Default message to notify the app that the command has finished."""
+        pass
+    
     class PushScreen(Message):
         """
         Default Message for pushing a new screen onto the app.

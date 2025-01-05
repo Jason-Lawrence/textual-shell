@@ -13,6 +13,8 @@ from textual_shell.widgets import (
     Shell
 )
 
+import commands
+
 class BasicShell(ShellApp):
     
     CSS = """
@@ -31,7 +33,7 @@ class BasicShell(ShellApp):
     CONFIG_PATH = os.path.join(os.getcwd(), '.config.yaml')
     HISTORY_LOG = os.path.join(os.environ.get('HOME', os.getcwd()), '.shell_history.log')
     
-    cmd_list = [Help(), Set(CONFIG_PATH)]
+    cmd_list = [Help(), Set(CONFIG_PATH), commands.Timer(), commands.Sleep()]
     command_names = [cmd.name for cmd in cmd_list]
     
     def compose(self) -> ComposeResult:
