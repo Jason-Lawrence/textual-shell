@@ -1,4 +1,5 @@
 site_name: Textual Shell
+site_url: https://jason-lawrence.github.io/textual-shell/
 
 theme:
   name: "material"
