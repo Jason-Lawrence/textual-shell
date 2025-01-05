@@ -5,11 +5,11 @@ from textual.widgets import DataTable, RichLog
 
 from textual_shell.commands import Set, Command
 from textual_shell.widgets import (
-    ConsoleLog, SettingsDisplay, Shell
+    ConsoleLog, SettingsDisplay, BaseShell
 )
 
 
-class ShellApp(App):
+class BaseShellApp(App):
     """Base app for the shell. Needed to catch messages sent by commands."""
         
     DEFAULT_CSS = """
@@ -37,7 +37,7 @@ class ShellApp(App):
     def on_console_log_reload(self, event: ConsoleLog.Reload) -> None:
         """Handle Reloading the settings."""
         event.stop()
-        shell = self.query_one(Shell)
+        shell = self.query_one(BaseShell)
         if set := shell.get_cmd_obj('set'):
             set.cmd_struct.clear()
             set._load_sections_into_struct()
@@ -72,15 +72,33 @@ class ShellApp(App):
         event.stop()
         self.push_screen(event.screen)
         
+        
+class ShellApp(BaseShellApp):
+    """
+    App to use with a normal shell. 
+    """
     def on_command_start(self, event: Command.Start) -> None:
-        """Catch when a command has started."""
-        shell = self.query_one(Shell)
+        """Catch when a command has started, and disable the input widget"""
+        event.stop()
+        shell = self.query_one(BaseShell)
         prompt_input = shell._get_prompt_input()
         prompt_input.disabled = True
         
     def on_command_finish(self, event: Command.Finish) -> None:
-        """Catch when a command has finished."""
-        shell = self.query_one(Shell)
+        """Catch when a command has finished, and re-enable the input widget"""
+        event.stop()
+        shell = self.query_one(BaseShell)
         prompt_input = shell._get_prompt_input()
         prompt_input.disabled = False
         prompt_input.focus()
+        
+
+class AsyncShellApp(BaseShellApp):
+    """App to use with the Asynchronous shell."""
+    
+    def on_command_start(self, event: Command.Start):
+        """"""
+        event.stop()
+
+    def on_command_finish(self, event: Command.Finish):
+        event.stop()

@@ -501,13 +501,4 @@ class BaseShell(Widget):
         prompt_input.value = previous_cmd
         prompt_input.action_end()
         
-    # @work(thread=True)   
-    # def execute_command(self, cmd: Command, *cmd_line):
-    #     """
-    #     Execute the command in a worker Thread.
-        
-    #     Args:
-    #         cmd (Command): The command to be executed.
-    #         cmd_line (*args): a list of positional arguments for the command.
-    #     """
-    #     res = cmd.execute(*cmd_line)
+    
