@@ -1,0 +1,48 @@
+name: Publish to PyPI
+on: 
+  release:
+    types:
+      - published
+
+jobs:
+  build:
+    name: Build Release
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Setup python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+    - name: Install pypa/build
+      run: python3 -m pip install build
+    - name: Build wheel and tarball
+      run: python3 -m build
+    - name: Store the distribution packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-package-distribution
+        path: dist/
+      
+  publish-to-pypi:
+    name: Publish Release
+    needs:
+    - build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/textual-shell/
+    permissions:
+      id-token: write
+
+    steps:
+    - name: Download dists
+      uses: actions/download-artifact@v4
+      with:
+        name: python-package-distribution
+        path: dist/
+    - name: Publish distribution to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
