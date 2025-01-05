@@ -17,33 +17,40 @@ pip install textual-shell
 import os
 
 from textual.app import ComposeResult
-from textual.containers import Grid
+from textual.containers import Grid, Container
 from textual.widgets import Header, Footer
 
 from textual_shell.app import ShellApp
-from textual_shell.command import Help, Set
+from textual_shell.commands import Help, Set
 from textual_shell.widgets import (
     CommandList,
-    CommandLog,
-    SettingsDisplay
+    ConsoleLog,
+    SettingsDisplay,
     Shell
+)
+
+import commands
 
 class BasicShell(ShellApp):
     
     CSS = """
-        Grid {
+        #app-grid {
             grid-size: 3;
             grid-rows: 1fr;
             grid-columns: 20 2fr 1fr;
             width: 1fr;
         }
     """
+    
+    #CSS_PATH = 'style.css'
+    
     theme = 'tokyo-night'
-        
-    cmd_list = [Help(), Set()]
-    command_names = [cmd.name for cmd in cmd_list]
-    CONFIG_PATH = os.path.join(os.environ.get('HOME', os.getcwd()), '.config.yml')
+
+    CONFIG_PATH = os.path.join(os.getcwd(), '.config.yaml')
     HISTORY_LOG = os.path.join(os.environ.get('HOME', os.getcwd()), '.shell_history.log')
+    
+    cmd_list = [Help(), Set(CONFIG_PATH), commands.Timer(), commands.Sleep()]
+    command_names = [cmd.name for cmd in cmd_list]
     
     def compose(self) -> ComposeResult:
         yield Header()
@@ -56,8 +63,8 @@ class BasicShell(ShellApp):
             ),
             SettingsDisplay(self.CONFIG_PATH),
             Container(),
-            Container(),
-            CommandLog()
+            ConsoleLog(self.CONFIG_PATH),
+            id='app-grid'
         )
         
         
