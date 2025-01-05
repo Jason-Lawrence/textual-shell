@@ -20,10 +20,16 @@ The prompt for the shell. Is a sub component of the Shell widget.
 [Prompt Reference](prompt.md){ .md-button .md-button--primary }
 
 
+## SettingsDisplay
+Simple widget for displaying the shell variables.
+
+[SettingsDisplay Reference](settings_display.md){ .md-button .md-button--primary }
+
+
 ## Shell
 The primary widget for this extension.
 
-[Shell Reference](shell.md){ .md-button .md-button--primary }
+[Shell Reference](shell/index.md){ .md-button .md-button--primary }
 
 
 ## Suggestions

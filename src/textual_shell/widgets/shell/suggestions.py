@@ -90,4 +90,5 @@ class Suggestions(OptionList):
         self.post_message(self.Hide())
     
     def action_enter_command(self) -> None:
+        """Execute the command"""
         self.post_message(self.Execute())

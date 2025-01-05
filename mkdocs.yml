@@ -32,7 +32,12 @@ nav:
     - CommandList: widgets/command_list.md
     - ConsoleLog: widgets/console_log.md
     - Prompt: widgets/prompt.md
-    - Shell: widgets/shell.md
+    - SettingsDisplay: widgets/settings_display.md
+    - Shell: 
+      - widgets/shell/index.md
+      - BaseShell: widgets/shell/base_shell.md
+      - AsyncShell: widgets/shell/async_shell.md
+      - Shell: widgets/shell/shell.md 
     - Suggestions: widgets/suggestions.md
 
   - Commands:
