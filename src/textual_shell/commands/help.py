@@ -112,3 +112,6 @@ class Help(Command):
         """
         help_text = cmd.help()
         self.send_screen(HelpScreen(help_text))
+        
+    def create_job(self, *args):
+        pass

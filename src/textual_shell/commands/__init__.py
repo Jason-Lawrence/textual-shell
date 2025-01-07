@@ -1,6 +1,6 @@
 from .command import Command, CommandArgument
 from .help import Help, HelpScreen
-from .set import Set
+from .set import Set, SetJob
 
 
 __all__ = [
@@ -8,5 +8,6 @@ __all__ = [
     'CommandArgument',
     'Help',
     'HelpScreen',
-    'Set'
+    'Set',
+    'SetJob'
 ]

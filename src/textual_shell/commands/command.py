@@ -14,6 +14,7 @@ from textual.widgets import (
     Static
 )
 
+from ..job import Job
 
 class CommandArgument:
     """
@@ -53,52 +54,10 @@ class CommandScreen(Screen):
         yield Center(Label(self.cmd_name.upper()))
         yield Center(LoadingIndicator())
         yield Center(Static(f'{self.cmd_name} is currently running.'))
-        
+  
     
 class Command(ABC):
     """Base class for the Commands for the shell widget."""
-    
-    class Start(Message):
-        """Default message to notify the app that a command has started."""
-        pass
-    
-    class Finish(Message):
-        """Default message to notify the app that the command has finished."""
-        pass
-    
-    class PushScreen(Message):
-        """
-        Default Message for pushing a new screen onto the app.
-        
-        Args:
-            screen (Screen): The output screen for the command.
-        """
-        def __init__(self, screen) -> None:
-            super().__init__()
-            self.screen = screen
-            
-    
-    class Log(Message):
-        """
-        Default Logging event for commands.
-        
-        Args:
-            command (str): The name of the command sending the log.
-            msg (str): The log message.
-            severity (int): The level of the severity.
-            
-        """
-        def __init__(
-            self,
-            command: Annotated[str, 'The name of the command sending the log.'],
-            msg: Annotated[str, 'The log message.'],
-            severity: Annotated[int, 'The level of the severity']
-        ) -> None:
-            super().__init__()
-            self.command = command
-            self.msg = msg
-            self.severity = severity
-        
     
     def __init__(
         self,
@@ -257,32 +216,8 @@ class Command(ABC):
                 current_index = next_index
         
         return False
-    
-    def send_log(
-        self,
-        msg: Annotated[str, 'log message'],
-        severity: Annotated[str, 'The level of severity']
-    ) -> None:
-        """
-        Send logs to the app.
-        
-        Args:
-            msg (str): The log message.
-            severity (str): The severity level of the log.
-        """
-        self.widget.post_message(self.Log(self.name, msg, severity))
-                
-    def send_screen(
-        self,
-        screen: Annotated[Screen, 'The output screen'],
-    ) -> None:
-        """Send an output screen"""
-        self.widget.post_message(self.PushScreen(screen))
 
     @abstractmethod
-    def execute(self):
-        """
-        Child classes must implement this function. 
-        This is what the shell will call to start the command.
-        """
+    def create_job(self, *args) -> Job:
+        """"""
         pass

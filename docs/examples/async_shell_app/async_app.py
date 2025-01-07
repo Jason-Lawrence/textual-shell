@@ -7,13 +7,13 @@ from textual.widgets import Header, Footer
 from textual_shell.app import AsyncShellApp
 from textual_shell.commands import Help, Set
 from textual_shell.widgets import (
+    AsyncShell,
     CommandList,
     ConsoleLog,
+    JobManager,
     SettingsDisplay,
-    AsyncShell
 )
 
-import commands
 
 class BasicShell(AsyncShellApp):
     
@@ -26,14 +26,12 @@ class BasicShell(AsyncShellApp):
         }
     """
     
-    #CSS_PATH = 'style.css'
-    
     theme = 'tokyo-night'
 
     CONFIG_PATH = os.path.join(os.getcwd(), '.config.yaml')
     HISTORY_LOG = os.path.join(os.environ.get('HOME', os.getcwd()), '.shell_history.log')
     
-    cmd_list = [Help(), Set(CONFIG_PATH), commands.Timer(), commands.Sleep()]
+    cmd_list = [Help(), Set(CONFIG_PATH)]
     command_names = [cmd.name for cmd in cmd_list]
     
     def compose(self) -> ComposeResult:
@@ -46,7 +44,7 @@ class BasicShell(AsyncShellApp):
                 prompt='xbsr <$ '
             ),
             SettingsDisplay(self.CONFIG_PATH),
-            Container(),
+            JobManager(),
             ConsoleLog(self.CONFIG_PATH),
             id='app-grid'
         )

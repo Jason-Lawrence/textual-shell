@@ -1,11 +1,18 @@
 from textual import log
 from textual.app import App
 from textual.css.query import NoMatches
-from textual.widgets import DataTable, RichLog
+from textual.widgets import (
+    DataTable,
+    RichLog
+)
 
-from textual_shell.commands import Set, Command
-from textual_shell.widgets import (
-    ConsoleLog, SettingsDisplay, BaseShell
+from .commands import SetJob
+from .job import Job
+from .widgets import (
+    BaseShell,
+    ConsoleLog,
+    JobManager,
+    SettingsDisplay
 )
 
 
@@ -18,7 +25,7 @@ class BaseShellApp(App):
             }
         """
     
-    def on_set_settings_changed(self, event: Set.SettingsChanged) -> None:
+    def on_set_job_settings_changed(self, event: SetJob.SettingsChanged) -> None:
         """
         Catch messages for when a setting has been changed.
         Update the settings display to reflect the new value.
@@ -49,7 +56,7 @@ class BaseShellApp(App):
         except NoMatches as e:
             log(f'SettingsDisplay widget is not in the DOM.')
 
-    def on_command_log(self, event: Command.Log) -> None:
+    def on_job_log(self, event: Job.Log) -> None:
         """
         Catch any logs sent by any command and write 
         them to the CommandLog widget.
@@ -65,7 +72,7 @@ class BaseShellApp(App):
         except NoMatches as e:
             log(f'Console Log not found')
         
-    def on_command_push_screen(self, event: Command.PushScreen) -> None:
+    def on_job_push_screen(self, event: Job.PushScreen) -> None:
         """
         Push the screen for the output of the command.
         """
@@ -77,14 +84,14 @@ class ShellApp(BaseShellApp):
     """
     App to use with a normal shell. 
     """
-    def on_command_start(self, event: Command.Start) -> None:
+    def on_job_start(self, event: Job.Start) -> None:
         """Catch when a command has started, and disable the input widget"""
         event.stop()
         shell = self.query_one(BaseShell)
         prompt_input = shell._get_prompt_input()
         prompt_input.disabled = True
         
-    def on_command_finish(self, event: Command.Finish) -> None:
+    def on_job_finish(self, event: Job.Finish) -> None:
         """Catch when a command has finished, and re-enable the input widget"""
         event.stop()
         shell = self.query_one(BaseShell)
@@ -96,9 +103,13 @@ class ShellApp(BaseShellApp):
 class AsyncShellApp(BaseShellApp):
     """App to use with the Asynchronous shell."""
     
-    def on_command_start(self, event: Command.Start):
+    def on_job_start(self, event: Job.Start):
         """"""
         event.stop()
+        job_manager = self.query_one(JobManager)
+        job_manager.add_job(event.job)
 
-    def on_command_finish(self, event: Command.Finish):
+    def on_job_finish(self, event: Job.Finish):
         event.stop()
+        job_manager = self.query_one(JobManager)
+        job_manager.remove_job(event.job_id)

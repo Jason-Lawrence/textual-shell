@@ -9,7 +9,7 @@ from textual.widget import Widget
 from textual.widgets import Label, RichLog
 
 from .. import configure
-from ..commands import Command
+from ..job import Job
 
 class ConsoleLog(Widget):
     """
@@ -114,7 +114,7 @@ class ConsoleLog(Widget):
 
         return False
         
-    def gen_record(self, event: Command.Log) -> str:
+    def gen_record(self, event: Job.Log) -> str:
         """
         Handle the log from the command.
         

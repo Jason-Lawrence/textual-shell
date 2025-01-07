@@ -1,7 +1,7 @@
 from textual import work
 
 from .base_shell import BaseShell
-from ...commands import Command
+from ...job import Job
 
 
 class AsyncShell(BaseShell):
@@ -60,7 +60,7 @@ class AsyncShell(BaseShell):
             padding: 0;
         }
     """
-    
+        
     def command_entered(self, cmdline):
         """"""
         cmdline = cmdline.strip(' ')
@@ -88,7 +88,8 @@ class AsyncShell(BaseShell):
                     )
                     
             else:
-                self.execute_command(cmd, *cmd_args)
+                job = cmd.create_job(*cmd_args)
+                self.start_job(job)
         
         else:
             self.notify(
@@ -102,14 +103,7 @@ class AsyncShell(BaseShell):
         self.history_list.appendleft(cmdline)
         self.mutate_reactive(AsyncShell.history_list)
         self.current_history_index = None
-    
-    @work(thread=True)   
-    def execute_command(self, cmd: Command, *cmd_line):
-        """
-        Execute the command in a worker Thread.
-        
-        Args:
-            cmd (Command): The command to be executed.
-            cmd_line (*args): a list of positional arguments for the command.
-        """
-        cmd.execute(*cmd_line)
+
+    @work()
+    async def start_job(self, job: Job):
+        await job.start()
