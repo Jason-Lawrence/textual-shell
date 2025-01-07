@@ -16,7 +16,9 @@ from .suggestions import Suggestions
 
 class BaseShell(Widget):
     """
-    Main custom widget for the shell.
+    Base class for the shell. 
+    Subclasses need to implement the command_entered method.
+    
     Pressing the up arrow key will cycle up through the history.
     Pressing the down arrow key will cycle down through the history,
     Pressing ctrl+c will clear the prompt input.
@@ -499,5 +501,3 @@ class BaseShell(Widget):
         previous_cmd = self.history_list[self.current_history_index]
         prompt_input.value = previous_cmd
         prompt_input.action_end()
-        
-    
