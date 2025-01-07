@@ -103,13 +103,20 @@ class ShellApp(BaseShellApp):
 class AsyncShellApp(BaseShellApp):
     """App to use with the Asynchronous shell."""
     
-    def on_job_start(self, event: Job.Start):
-        """"""
+    def on_job_start(self, event: Job.Start) -> None:
+        """Add new jobs."""
         event.stop()
         job_manager = self.query_one(JobManager)
         job_manager.add_job(event.job)
 
-    def on_job_finish(self, event: Job.Finish):
+    def on_job_finish(self, event: Job.Finish) -> None:
+        """Clean up finished jobs."""
         event.stop()
         job_manager = self.query_one(JobManager)
         job_manager.remove_job(event.job_id)
+        
+    def on_job_status_change(self, event: Job.StatusChange) -> None:
+        """Update the status of a job."""
+        event.stop()
+        job_manager = self.query_one(JobManager)
+        job_manager.update_job_status(event.job_id, event.status)
