@@ -62,6 +62,7 @@ class Set(Command):
                 self._add_options(node, section, setting)
     
     def _add_options(self, node, section, setting) -> None:
+        """Add options for the setting node."""
         options = configure.get_setting_options(section, setting, self.config_path)
         
         if options is None:
@@ -94,7 +95,16 @@ class Set(Command):
         arg = CommandArgument(section, description)
         return self.add_argument_to_cmd_struct(arg, parent=parent)
         
-    def create_job(self, *args):
+    def create_job(self, *args) -> 'SetJob':
+        """
+        Create a job to handle the execution.
+        
+        Args:
+            args (tuple[str]): Should contain the section, setting, and value.
+            
+        Returns:
+            set_job (SetJob): The job to handle the execution.
+        """
         return SetJob(
             *args,
             config=self.config_path,
@@ -104,6 +114,15 @@ class Set(Command):
 
         
 class SetJob(Job):
+    """
+    Job for handling setting shell variables.
+    
+    Args:
+        section_name (str): The name of the section.
+        setting_name (str): The name of the setting.
+        value (str): The value the setting was set to.
+        config (str): The path to the config.
+    """
     
     class SettingsChanged(Message):
         """
@@ -147,6 +166,7 @@ class SetJob(Job):
         """
         Update the setting in the config.
         """
+        self.status = self.Status.RUNNING
         options = configure.get_setting_options(
             self.section, self.setting, self.config
         )
