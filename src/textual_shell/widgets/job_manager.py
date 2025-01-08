@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from textual.app import ComposeResult
+from textual.screen import Screen
 from textual.widget import Widget
 from textual.widgets import (
     DataTable,
@@ -74,3 +75,30 @@ class JobManager(Widget):
             column_key=self.column_keys[1],
             value=status
         )
+        
+    def switch_job_screen(
+        self,
+        job_id: Annotated[str, 'The id of the job'],
+    ) -> Screen:
+        """"""
+        try:
+            job = self.job_list[job_id]
+            self.app.switch_screen(job.screen)
+        
+        except KeyError as e:
+            pass
+        
+        except AttributeError as e:
+            pass
+        
+    def kill_job(
+        self,
+        job_id: Annotated[str, 'The id of the job'],
+    ) -> None:
+        """"""
+        try:
+            job = self.job_list[job_id]
+            job.task.cancel()
+        
+        except KeyError as e:
+            pass
