@@ -160,9 +160,7 @@ class SetJob(Job):
         self.setting = setting
         self.value = value
     
-    async def execute(
-        self, 
-    ) -> None:
+    async def execute(self) -> None:
         """
         Update the setting in the config.
         """
