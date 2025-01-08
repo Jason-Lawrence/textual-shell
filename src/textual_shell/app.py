@@ -1,6 +1,7 @@
 from textual import log
 from textual.app import App
 from textual.css.query import NoMatches
+from textual.screen import Screen
 from textual.widgets import (
     DataTable,
     RichLog
@@ -24,6 +25,15 @@ class BaseShellApp(App):
                 layers: shell popup;
             }
         """
+        
+    def _get_job_manager(self):
+        """Search through all of the screens to find the one with the Job Manager widget."""
+        for screen in self.app.screen_stack:
+            try: 
+                return screen.query_one(JobManager)
+
+            except NoMatches as e:
+                pass
     
     def on_set_job_settings_changed(self, event: SetJob.SettingsChanged) -> None:
         """
@@ -106,17 +116,17 @@ class AsyncShellApp(BaseShellApp):
     def on_job_start(self, event: Job.Start) -> None:
         """Add new jobs."""
         event.stop()
-        job_manager = self.query_one(JobManager)
+        job_manager = self._get_job_manager()
         job_manager.add_job(event.job)
 
     def on_job_finish(self, event: Job.Finish) -> None:
         """Clean up finished jobs."""
         event.stop()
-        job_manager = self.query_one(JobManager)
+        job_manager = self._get_job_manager()
         job_manager.remove_job(event.job_id)
         
     def on_job_status_change(self, event: Job.StatusChange) -> None:
         """Update the status of a job."""
         event.stop()
-        job_manager = self.query_one(JobManager)
+        job_manager = self._get_job_manager()
         job_manager.update_job_status(event.job_id, event.status)
