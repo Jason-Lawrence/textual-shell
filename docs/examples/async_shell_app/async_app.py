@@ -7,7 +7,7 @@ from textual.widgets import Header, Footer
 from textual_shell.app import AsyncShellApp
 from textual_shell.commands import Help, Set
 from textual_shell.widgets import (
-    AsyncShell,
+    Shell,
     CommandList,
     ConsoleLog,
     JobManager,
@@ -39,7 +39,7 @@ class BasicShell(AsyncShellApp):
         yield Footer()
         yield Grid(
             CommandList(self.command_names),
-            AsyncShell(
+            Shell(
                 self.cmd_list,
                 prompt='xbsr <$ '
             ),
