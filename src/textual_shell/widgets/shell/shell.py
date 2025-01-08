@@ -89,7 +89,8 @@ class Shell(BaseShell):
                     return
                 
                 if show_help := self.get_cmd_obj(cmd_args[0]):
-                    cmd.execute(show_help)
+                    job = cmd.create_job(show_help)
+                    self.start_job(job)
                     
                 else:
                     self.notify(

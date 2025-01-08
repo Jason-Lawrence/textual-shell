@@ -3,7 +3,6 @@ from .command_list import CommandList
 from .job_manager import JobManager
 from .settings import SettingsDisplay
 from .shell import (
-    AsyncShell,
     BaseShell,
     Prompt,
     PromptInput,
@@ -13,7 +12,6 @@ from .shell import (
 
 
 __all__ = [
-    'AsyncShell',
     'BaseShell',
     'CommandList',
     'ConsoleLog',
