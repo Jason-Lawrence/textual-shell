@@ -14,13 +14,20 @@ class JobManager(Widget):
     """Manage currently running jobs."""
     
     DEFAULT_CSS = """
+        JobManager {
+            border: solid white;
+            
+            DataTable {
+                border-top: solid white;
+            }
+        }
     
     """
     
     job_list: dict[str, Job] = {}
     
     def compose(self) -> ComposeResult:
-        yield Label('Jobs')
+        yield Label('Job Manager')
         yield DataTable()
         
     def on_mount(self) -> None:
