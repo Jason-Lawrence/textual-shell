@@ -78,24 +78,32 @@ class JobManager(Widget):
         
     def switch_job_screen(
         self,
-        job_id: Annotated[str, 'The id of the job'],
-    ) -> Screen:
-        """"""
+        job_id: Annotated[str, 'The id of the job']
+    ) -> None:
+        """
+        Switch to the specified jobs screen if it exists.
+        
+        Args:
+            job_id (str): The id of the job.
+        """
         try:
             job = self.job_list[job_id]
-            self.app.switch_screen(job.screen)
+            if job.screen:
+                self.app.push_screen(job.screen)
         
         except KeyError as e:
-            pass
-        
-        except AttributeError as e:
             pass
         
     def kill_job(
         self,
         job_id: Annotated[str, 'The id of the job'],
     ) -> None:
-        """"""
+        """
+        Cancel the job.
+        
+        Args:
+            job_id (str): The id of the job.
+        """
         try:
             job = self.job_list[job_id]
             job.task.cancel()
