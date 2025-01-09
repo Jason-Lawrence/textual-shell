@@ -107,7 +107,6 @@ class Job(ABC):
         self.shell = shell
         self.cmd = cmd
         self.screen = screen
-        self.pending()
         
     def _generate_id(self):
         """
@@ -199,6 +198,7 @@ class Job(ABC):
         """Create a asyncio task for the job and 
         schedule it for execution."""
         self.shell.post_message(self.Start(self))
+        self.pending()
         self.task = asyncio.create_task(
             self.execute(),
             name=self.id
