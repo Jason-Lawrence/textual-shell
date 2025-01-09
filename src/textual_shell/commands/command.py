@@ -37,27 +37,31 @@ class CommandArgument:
     
     def __str__(self) -> str:
         return f'{self.name}: {self.description}'
-    
-    
-class CommandScreen(Screen):
-    """Base Screen for commands to output too."""
-    
-    def __init__(
-        self, 
-        cmd_name: Annotated[str, 'The name of the command'],
-        *args, **kwargs
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        self.cmd_name = cmd_name
-    
-    def compose(self) -> ComposeResult:
-        yield Center(Label(self.cmd_name.upper()))
-        yield Center(LoadingIndicator())
-        yield Center(Static(f'{self.cmd_name} is currently running.'))
   
     
 class Command(ABC):
     """Base class for the Commands for the shell widget."""
+    
+    class Log(Message):
+        """
+        Default Logging event for commands.
+        
+        Args:
+            sender (str): The name of the command sending the log.
+            msg (str): The log message.
+            severity (int): The level of the severity.
+            
+        """
+        def __init__(
+            self,
+            sender: Annotated[str, 'The name of the command sending the log.'],
+            msg: Annotated[str, 'The log message.'],
+            severity: Annotated[int, 'The level of the severity']
+        ) -> None:
+            super().__init__()
+            self.sender = sender
+            self.msg = msg
+            self.severity = severity
     
     def __init__(
         self,
@@ -219,5 +223,11 @@ class Command(ABC):
 
     @abstractmethod
     def create_job(self, *args) -> Job:
-        """"""
+        """
+        Create a job to execute the command
+        Subclasses must implement it.
+        
+        Returns:
+            job (Job): The created job ready for execution.
+        """
         pass
