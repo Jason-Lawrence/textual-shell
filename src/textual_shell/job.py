@@ -73,18 +73,6 @@ class Job(ABC):
         ) -> None:
             super().__init__()
             self.job_id = job_id
-
-
-    class PushScreen(Message):
-        """
-        Message for pushing a new screen onto the app.
-        
-        Args:
-            screen (Screen): The output screen for the command.
-        """
-        def __init__(self, screen) -> None:
-            super().__init__()
-            self.screen = screen
             
     
     class Log(Message):
@@ -116,7 +104,6 @@ class Job(ABC):
         screen: Screen=None
     ) -> None:
         self.id = f'{cmd}_{self._generate_id()}'
-        self.status = self.Status.PENDING
         self.shell = shell
         self.cmd = cmd
         self.screen = screen
@@ -129,6 +116,69 @@ class Job(ABC):
             id (str): The id for the job.
         """
         return ''.join(random.choices(string.digits, k=6))
+    
+    def pending(self) -> None:
+        """Signal the Job Manager that this job is pending."""
+        self.status = self.Status.PENDING
+        self.shell.post_message(
+            self.StatusChange(
+                self.id,
+                self.Status.PENDING
+            )
+        )
+    
+    def running(self) -> None:
+        """Signal the Job Manager that this job is running."""
+        self.status = self.Status.RUNNING
+        self.shell.post_message(
+            self.StatusChange(
+                self.id,
+                self.Status.RUNNING
+            )
+        )
+        
+    def cancelled(self) -> None:
+        """Signal the Job Manager that this job was cancelled."""
+        self.status = self.Status.CANCELLED
+        self.shell.post_message(
+            self.StatusChange(
+                self.id,
+                self.Status.CANCELLED
+            )
+        )
+    
+    def completed(self) -> None:
+        """Signal the Job Manager that this job has completed."""
+        self.status = self.Status.COMPLETED
+        self.shell.post_message(
+            self.StatusChange(
+                self.id,
+                self.Status.COMPLETED
+            )
+        )
+    
+    def error(self) -> None:
+        """Signal the Job Manager that this job has Errored"""
+        self.status = self.Status.ERROR
+        self.shell.post_message(
+            self.StatusChange(
+                self.id,
+                self.Status.ERROR
+            )
+        )
+        
+    async def wait_for_cancel(
+        self,
+        sleep_interval: Annotated[int, 'How long the sleep interval should be.']=10
+    ) -> None:
+        """
+        Wait for the jobs task to be cancelled.
+        
+        Args:
+            sleep_interval (int): How long to sleep for in between checks. 
+        """
+        while not self.task.cancelled():
+            await asyncio.sleep(sleep_interval)
     
     def send_log(
         self,
@@ -143,18 +193,12 @@ class Job(ABC):
             severity (str): The severity level of the log.
         """
         self.shell.post_message(self.Log(self.cmd, msg, severity))
-                
-    def send_screen(
-        self,
-        screen: Annotated[Screen, 'The output screen'],
-    ) -> None:
-        """Send an output screen"""
-        self.shell.post_message(self.PushScreen(screen))
     
     async def start(self):
         """Create a asyncio task for the job and 
         schedule it for execution."""
         self.shell.post_message(self.Start(self))
+        self.pending()
         self.task = asyncio.create_task(
             self.execute(),
             name=self.id

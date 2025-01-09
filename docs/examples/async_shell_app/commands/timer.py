@@ -167,25 +167,13 @@ class TimerScreen(Screen):
 class TimerJob(Job):
     
     async def execute(self):
-        self.shell.post_message(
-            self.StatusChange(
-                self.id,
-                self.Status.RUNNING
-            )
-        )
+        self.running()
         self.shell.app.install_screen(self.screen, name=self.id)
         
-        while not self.task.cancelled():
-            await asyncio.sleep(10)
+        await self.wait_for_cancel()
         
         self.shell.app.uninstall_screen(self.screen)
-        
-        self.shell.post_message(
-            self.StatusChange(
-                self.id,
-                self.Status.COMPLETED
-            )
-        )
+        self.completed()
 
 
 class Timer(Command):

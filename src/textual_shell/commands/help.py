@@ -91,21 +91,13 @@ class HelpJob(Job):
     
     async def execute(self):
         """Display the Help screen."""
-        self.shell.post_message(
-            self.StatusChange(
-                self.id,
-                self.Status.RUNNING
-            )
-        )
+        self.running()
+        
         help_text = self.cmd_to_show.help()
         help_screen = HelpScreen(help_text)
         await self.shell.app.push_screen_wait(help_screen)
-        self.shell.post_message(
-            self.StatusChange(
-                self.id,
-                self.Status.COMPLETED
-            )
-        )
+        
+        self.completed()
 
 class Help(Command):
     """
