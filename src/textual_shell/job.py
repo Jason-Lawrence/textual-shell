@@ -25,7 +25,8 @@ class Job(ABC):
         CANCELLED = 2
         COMPLETED = 3
         ERROR = 4
-        
+
+
     class StatusChange(Message):
         """
         Message to notify a change in status for a job.
@@ -88,22 +89,22 @@ class Job(ABC):
     
     class Log(Message):
         """
-        Default Logging event for commands.
+        Logging event for jobs.
         
         Args:
-            command (str): The name of the command sending the log.
+            sender (str): The id of the Job.
             msg (str): The log message.
             severity (int): The level of the severity.
             
         """
         def __init__(
             self,
-            command: Annotated[str, 'The name of the command sending the log.'],
+            sender: Annotated[str, 'The id of the Job.'],
             msg: Annotated[str, 'The log message.'],
             severity: Annotated[int, 'The level of the severity']
         ) -> None:
             super().__init__()
-            self.command = command
+            self.sender = sender
             self.msg = msg
             self.severity = severity
 
@@ -111,12 +112,14 @@ class Job(ABC):
     def __init__(
         self,
         cmd: Annotated[str, 'The name of the command'],
-        shell
+        shell,
+        screen: Screen=None
     ) -> None:
         self.id = f'{cmd}_{self._generate_id()}'
         self.status = self.Status.PENDING
         self.shell = shell
         self.cmd = cmd
+        self.screen = screen
         
     def _generate_id(self):
         """
@@ -164,5 +167,7 @@ class Job(ABC):
         
     @abstractmethod
     async def execute(self):
+        """Execute the async task for the job.
+        Subclasses must implement this."""
         pass
         
