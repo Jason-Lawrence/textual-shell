@@ -5,7 +5,7 @@ from textual.containers import Grid, Container
 from textual.widgets import Header, Footer
 
 from textual_shell.app import AsyncShellApp
-from textual_shell.commands import Help, Set
+from textual_shell.commands import Help, Set, Jobs
 from textual_shell.widgets import (
     Shell,
     CommandList,
@@ -13,6 +13,8 @@ from textual_shell.widgets import (
     JobManager,
     SettingsDisplay,
 )
+
+from commands import Sleep, Timer
 
 
 class BasicShell(AsyncShellApp):
@@ -31,7 +33,7 @@ class BasicShell(AsyncShellApp):
     CONFIG_PATH = os.path.join(os.getcwd(), '.config.yaml')
     HISTORY_LOG = os.path.join(os.environ.get('HOME', os.getcwd()), '.shell_history.log')
     
-    cmd_list = [Help(), Set(CONFIG_PATH)]
+    cmd_list = [Help(), Set(CONFIG_PATH), Jobs(), Sleep(), Timer()]
     command_names = [cmd.name for cmd in cmd_list]
     
     def compose(self) -> ComposeResult:
@@ -44,8 +46,9 @@ class BasicShell(AsyncShellApp):
                 prompt='xbsr <$ '
             ),
             SettingsDisplay(self.CONFIG_PATH),
-            JobManager(),
+            Container(),
             ConsoleLog(self.CONFIG_PATH),
+            JobManager(),
             id='app-grid'
         )
         
