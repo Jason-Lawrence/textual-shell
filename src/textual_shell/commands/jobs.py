@@ -70,6 +70,45 @@ class Jobs(Command):
         kill = CommandArgument('kill', 'Kill the job.')
         k_index = self.add_argument_to_cmd_struct(kill, parent=root_index)
         
+        self.jobs = []
+        
+    def get_suggestions(
+        self,
+        current_arg: str
+    ) -> Annotated[list[str], 'A list of possible next values']:
+        """
+        Get a list of suggestions for autocomplete via the current args neighbors.
+        
+        Args:
+            current_arg (str): The current arg in the command line.
+            
+        Returns:
+            suggestions (List[str]): List of current node's neighbors names.
+        """
+        if current_arg == 'kill' or current_arg == 'attach':
+            return self.jobs
+        
+        else:
+            return super().get_suggestions(current_arg)
+
+    def add_job_id(self, job_id: str) -> None:
+        """
+        Add the job id to use for suggestions.
+        
+        Args:
+            job_id (str): Tht job to remove.
+        """
+        self.jobs.append(job_id)
+    
+    def remove_job_id(self, job_id: str) -> None:
+        """
+        Remove the job id from the suggestions.
+        
+        Args:
+            job_id (str): Tht job to remove.
+        """
+        self.jobs.remove(job_id)
+        
     def create_job(self, *args) -> JobsJob:
         """Create the job to manage other jobs."""
         if len(args) != 2:

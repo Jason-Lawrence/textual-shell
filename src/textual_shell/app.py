@@ -26,7 +26,7 @@ class BaseShellApp(App):
             }
         """
         
-    def _get_job_manager(self):
+    def _get_job_manager(self) -> JobManager:
         """Search through all of the screens to find the one with the Job Manager widget."""
         for screen in self.app.screen_stack:
             try: 
@@ -35,6 +35,15 @@ class BaseShellApp(App):
             except NoMatches as e:
                 pass
     
+    def _get_shell(self) -> BaseShell:
+        """Search through all of the screens to find the one with the Shell widget."""
+        for screen in self.app.screen_stack:
+            try:
+                return screen.query_one(BaseShell)
+            
+            except NoMatches as e:
+                pass
+            
     def on_set_job_settings_changed(self, event: SetJob.SettingsChanged) -> None:
         """
         Catch messages for when a setting has been changed.
@@ -54,7 +63,7 @@ class BaseShellApp(App):
     def on_console_log_reload(self, event: ConsoleLog.Reload) -> None:
         """Handle Reloading the settings."""
         event.stop()
-        shell = self.query_one(BaseShell)
+        shell = self._get_shell()
         if set := shell.get_cmd_obj('set'):
             set.cmd_struct.clear()
             set._load_sections_into_struct()
@@ -127,12 +136,20 @@ class AsyncShellApp(BaseShellApp):
         event.stop()
         job_manager = self._get_job_manager()
         job_manager.add_job(event.job)
+        
+        shell = self._get_shell()
+        jobs = shell.get_cmd_obj('jobs')
+        jobs.add_job_id(event.job.id)
 
     def on_job_finish(self, event: Job.Finish) -> None:
         """Clean up finished jobs."""
         event.stop()
         job_manager = self._get_job_manager()
         job_manager.remove_job(event.job_id)
+        
+        shell = self._get_shell()
+        jobs = shell.get_cmd_obj('jobs')
+        jobs.remove_job_id(event.job_id)
         
     def on_job_status_change(self, event: Job.StatusChange) -> None:
         """Update the status of a job."""
