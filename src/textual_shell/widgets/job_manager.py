@@ -89,9 +89,20 @@ class JobManager(Widget):
             job = self.job_list[job_id]
             if job.screen:
                 self.app.push_screen(job.screen)
+                
+            else:
+                self.notify(
+                    message=f'{job_id.upper()} has no screen to attach to.',
+                    title='Screen Not Found',
+                    severity='warning'
+                )
         
         except KeyError as e:
-            pass
+            self.notify(
+                message=f'Job with ID: [{job_id.upper()}] does not exist',
+                title='Job Not Found',
+                severity='error'
+            )
         
     def kill_job(
         self,
@@ -109,3 +120,10 @@ class JobManager(Widget):
         
         except KeyError as e:
             pass
+    
+    def on_data_table_cell_selected(
+        self,
+        event: DataTable.CellSelected
+    ) -> None:
+        """Attach to the screen of the job."""
+        self.switch_job_screen(event.value)
