@@ -98,13 +98,6 @@ class BaseShellApp(App):
         except NoMatches as e:
             log(f'Console Log not found.')
         
-    def on_job_push_screen(self, event: Job.PushScreen) -> None:
-        """
-        Push the screen for the output of the command.
-        """
-        event.stop()
-        self.push_screen(event.screen)
-        
         
 class ShellApp(BaseShellApp):
     """
