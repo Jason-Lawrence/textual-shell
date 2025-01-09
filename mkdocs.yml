@@ -31,18 +31,19 @@ nav:
     - widgets/index.md
     - CommandList: widgets/command_list.md
     - ConsoleLog: widgets/console_log.md
+    - JobManager: widgets/job_manager.md
     - Prompt: widgets/prompt.md
     - SettingsDisplay: widgets/settings_display.md
     - Shell: 
       - widgets/shell/index.md
       - BaseShell: widgets/shell/base_shell.md
-      - AsyncShell: widgets/shell/async_shell.md
       - Shell: widgets/shell/shell.md 
     - Suggestions: widgets/suggestions.md
 
   - Commands:
     - commands/index.md
     - HELP: commands/help.md
+    - JOBS: commands/jobs.md
     - SET: commands/set.md
     - COMMAND: commands/command.md
 
@@ -50,6 +51,7 @@ nav:
 
   - Reference:
     - reference/index.md
-    - textual_shell.configure: reference/configure.md
     - textual_shell.app: reference/shell_app.md
+    - textual_shell.configure: reference/configure.md
+    - textual_shell.job: reference/job.md
 
