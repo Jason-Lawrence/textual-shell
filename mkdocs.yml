@@ -50,7 +50,7 @@ nav:
 
   - Reference:
     - reference/index.md
-    - textual_shell.app: reference/shell_app.md
+    - textual_shell.app: reference/app.md
     - textual_shell.command: reference/command.md
     - textual_shell.configure: reference/configure.md
     - textual_shell.job: reference/job.md
