@@ -1,6 +1,6 @@
 import asyncio
 
-from textual_shell.commands import Command, CommandArgument
+from textual_shell.command import Command, CommandArgument
 from textual_shell.job import Job
 
 class SleepJob(Job):

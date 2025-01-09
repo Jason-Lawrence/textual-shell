@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from textual.app import ComposeResult
-from textual.screen import Screen
 from textual.widget import Widget
 from textual.widgets import (
     DataTable,

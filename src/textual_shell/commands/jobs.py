@@ -3,7 +3,7 @@ from typing import Annotated
 
 from textual.message import Message
 
-from .command import Command, CommandArgument
+from ..command import Command, CommandArgument
 from ..job import Job
 
 

@@ -3,18 +3,11 @@ from abc import ABC, abstractmethod
 
 import rustworkx as rx
 
-from textual.app import ComposeResult
-from textual.containers import Center
 from textual.message import Message
-from textual.screen import Screen
 from textual.widget import Widget
-from textual.widgets import (
-    Label,
-    LoadingIndicator,
-    Static
-)
 
-from ..job import Job
+
+from .job import Job
 
 class CommandArgument:
     """

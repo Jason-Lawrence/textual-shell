@@ -5,7 +5,7 @@ from textual.containers import Grid
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Markdown
 
-from .command import Command, CommandArgument
+from ..command import Command, CommandArgument
 from ..job import Job
 
 
