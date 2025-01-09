@@ -1,11 +1,18 @@
 from textual import log
 from textual.app import App
 from textual.css.query import NoMatches
-from textual.widgets import DataTable, RichLog
+from textual.widgets import (
+    DataTable,
+    RichLog
+)
 
-from textual_shell.commands import Set, Command
-from textual_shell.widgets import (
-    ConsoleLog, SettingsDisplay, BaseShell
+from .commands import Command, SetJob, JobsJob
+from .job import Job
+from .widgets import (
+    BaseShell,
+    ConsoleLog,
+    JobManager,
+    SettingsDisplay
 )
 
 
@@ -17,8 +24,17 @@ class BaseShellApp(App):
                 layers: shell popup;
             }
         """
+        
+    def _get_job_manager(self):
+        """Search through all of the screens to find the one with the Job Manager widget."""
+        for screen in self.app.screen_stack:
+            try: 
+                return screen.query_one(JobManager)
+
+            except NoMatches as e:
+                pass
     
-    def on_set_settings_changed(self, event: Set.SettingsChanged) -> None:
+    def on_set_job_settings_changed(self, event: SetJob.SettingsChanged) -> None:
         """
         Catch messages for when a setting has been changed.
         Update the settings display to reflect the new value.
@@ -49,23 +65,39 @@ class BaseShellApp(App):
         except NoMatches as e:
             log(f'SettingsDisplay widget is not in the DOM.')
 
-    def on_command_log(self, event: Command.Log) -> None:
+    def on_job_log(self, event: Job.Log) -> None:
         """
-        Catch any logs sent by any command and write 
-        them to the CommandLog widget.
+        Catch any logs sent by any Job and write 
+        them to the ConsoleLog widget.
         """
         event.stop()
         try:
-            command_log = self.query_one(ConsoleLog)
-            rich_log = command_log.query_one(RichLog)
-            log_entry = command_log.gen_record(event)
+            console_log = self.query_one(ConsoleLog)
+            rich_log = console_log.query_one(RichLog)
+            log_entry = console_log.gen_record(event)
             if log_entry:
                 rich_log.write(log_entry)
         
         except NoMatches as e:
             log(f'Console Log not found')
+            
+    def on_command_log(self, event: Command.Log) -> None:
+        """
+        Catch any logs sent by any Command and write
+        them to the ConsoleLog widget
+        """
+        event.stop()
+        try:
+            console_log = self.query_one(ConsoleLog)
+            rich_log = console_log.query_one(RichLog)
+            log_entry = console_log.gen_record(event)
+            if log_entry:
+                rich_log.write(log_entry)
+                
+        except NoMatches as e:
+            log(f'Console Log not found.')
         
-    def on_command_push_screen(self, event: Command.PushScreen) -> None:
+    def on_job_push_screen(self, event: Job.PushScreen) -> None:
         """
         Push the screen for the output of the command.
         """
@@ -77,14 +109,14 @@ class ShellApp(BaseShellApp):
     """
     App to use with a normal shell. 
     """
-    def on_command_start(self, event: Command.Start) -> None:
+    def on_job_start(self, event: Job.Start) -> None:
         """Catch when a command has started, and disable the input widget"""
         event.stop()
         shell = self.query_one(BaseShell)
         prompt_input = shell._get_prompt_input()
         prompt_input.disabled = True
         
-    def on_command_finish(self, event: Command.Finish) -> None:
+    def on_job_finish(self, event: Job.Finish) -> None:
         """Catch when a command has finished, and re-enable the input widget"""
         event.stop()
         shell = self.query_one(BaseShell)
@@ -96,9 +128,32 @@ class ShellApp(BaseShellApp):
 class AsyncShellApp(BaseShellApp):
     """App to use with the Asynchronous shell."""
     
-    def on_command_start(self, event: Command.Start):
-        """"""
+    def on_job_start(self, event: Job.Start) -> None:
+        """Add new jobs."""
         event.stop()
+        job_manager = self._get_job_manager()
+        job_manager.add_job(event.job)
 
-    def on_command_finish(self, event: Command.Finish):
+    def on_job_finish(self, event: Job.Finish) -> None:
+        """Clean up finished jobs."""
         event.stop()
+        job_manager = self._get_job_manager()
+        job_manager.remove_job(event.job_id)
+        
+    def on_job_status_change(self, event: Job.StatusChange) -> None:
+        """Update the status of a job."""
+        event.stop()
+        job_manager = self._get_job_manager()
+        job_manager.update_job_status(event.job_id, event.status)
+
+    def on_jobs_job_attach(self, event: JobsJob.Attach) -> None:
+        """Attach to the jobs screen."""
+        event.stop()
+        job_manager = self._get_job_manager()
+        job_manager.switch_job_screen(event.job_id)
+
+    def on_jobs_job_kill(self, event: JobsJob.Kill) -> None:
+        """Kill the job."""
+        event.stop()
+        job_manager =self._get_job_manager()
+        job_manager.kill_job(event.job_id)

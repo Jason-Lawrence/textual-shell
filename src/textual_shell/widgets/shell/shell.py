@@ -1,10 +1,23 @@
+from textual import work
+
 from .base_shell import BaseShell
+from ...job import Job
 
 
 class Shell(BaseShell):
     """
-    Synchronous shell widget.
-    help is a reserved command.
+    Main shell widget. When a command is executed it will use 
+    the command instance to create a job specific to the command
+    and schedule it for execution.
+    
+    Pressing the up arrow key will cycle up through the history.
+    Pressing the down arrow key will cycle down through the history,
+    Pressing ctrl+c will clear the prompt input.
+    
+    Args:
+        commands (List[Command]): List of shell commands.
+        prompt (str): prompt for the shell.
+        history_log (str): The path for the history log file. 
     
     """
     
@@ -76,7 +89,8 @@ class Shell(BaseShell):
                     return
                 
                 if show_help := self.get_cmd_obj(cmd_args[0]):
-                    cmd.execute(show_help)
+                    job = cmd.create_job(show_help)
+                    self.start_job(job)
                     
                 else:
                     self.notify(
@@ -87,7 +101,8 @@ class Shell(BaseShell):
                     )
                     
             else:
-                cmd.execute(*cmd_args)
+                job = cmd.create_job(*cmd_args)
+                self.start_job(job)
         
         else:
             self.notify(
@@ -101,3 +116,7 @@ class Shell(BaseShell):
         self.history_list.appendleft(cmdline)
         self.mutate_reactive(Shell.history_list)
         self.current_history_index = None
+
+    @work()
+    async def start_job(self, job: Job):
+        await job.start()

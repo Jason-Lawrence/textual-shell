@@ -76,6 +76,20 @@ def get_setting_options(
     setting: Annotated[str, 'The setting to get.'],
     path: Annotated[str, 'The path to the config file.']
 ) -> (list[str] | dict[str, str]):
+    """
+    Get the options for a specific setting if they exist.
+    
+    Args:
+        section (str): The section of the config.
+        setting (str): The setting to retrieve the value for.
+        path (str): The path to the config.
+    
+    Returns:
+        options (list[str] | dict[str, str]):
+            The options can either be a list of possible values, 
+            or a dictionary where the keys are the values that will
+            be displayed and the value will be the actual value.
+    """
     setting = get_setting(section, setting, path)
     return setting.get('options', None)
 
@@ -101,7 +115,17 @@ def get_setting(
 def check_section(
     section: Annotated[str, 'The name of the section.'],
     path: Annotated[str, 'The path to create the config file.'],
-) -> dict:
+) -> bool:
+    """
+    Check if a section exists in the config.
+    
+    Args:
+        section (str): The section of the config.
+        path (str): The path to the config.
+        
+    Returns:
+        exists (bool): True if it exists else False.
+    """
     config = get_config(path)
     return section in config
 

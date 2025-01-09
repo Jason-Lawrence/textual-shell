@@ -6,6 +6,7 @@ from textual.message import Message
 
 
 from .. import configure
+from ..job import Job
 from .command import Command, CommandArgument
 
 
@@ -20,27 +21,6 @@ class Set(Command):
     Examples:
         set <section> <setting> <value> # sets the variable in the section to the value.
     """
-    
-    class SettingsChanged(Message):
-        """
-        Event for when a setting has been changed.
-        
-        Args:
-            section_name (str): The name of the section.
-            setting_name (str): The name of the setting.
-            value (str): The value the setting was set to.
-        """
-        
-        def __init__(
-            self,
-            section_name: Annotated[str, 'The name of the section.'],
-            setting_name: Annotated[str, 'The name of the setting that was changed.'],
-            value: Annotated[str, 'The value the setting was set to.']
-        ) -> None:
-            super().__init__()
-            self.section_name = section_name
-            self.setting_name = setting_name
-            self.value = value
     
     def __init__(
         self,
@@ -82,6 +62,7 @@ class Set(Command):
                 self._add_options(node, section, setting)
     
     def _add_options(self, node, section, setting) -> None:
+        """Add options for the setting node."""
         options = configure.get_setting_options(section, setting, self.config_path)
         
         if options is None:
@@ -113,52 +94,102 @@ class Set(Command):
         """
         arg = CommandArgument(section, description)
         return self.add_argument_to_cmd_struct(arg, parent=parent)
-    
-    def update_settings(
-        self, 
-        section: Annotated[str, 'Section name'],
-        setting: Annotated[str, 'Setting name'],
-        value: Annotated[str, 'Default value']=None
-    ) -> None:
+        
+    def create_job(self, *args) -> 'SetJob':
         """
-        Update the setting in the config.
+        Create a job to handle the execution.
         
         Args:
-            section (str): The name of the section.
-            setting (str): The name of the setting.
-            value (str): The value the setting was set to.
-        """
-        options = configure.get_setting_options(section, setting, self.config_path)
+            args (tuple[str]): Should contain the section, setting, and value.
             
-        if value is not None and value not in options:
-            self.send_log(f'Invalid value: {value} for {section}.{setting}' ,logging.ERROR)
-            return
-        
-        self.send_log(f'Updating setting: {section}.{setting}', logging.INFO)
-        configure.update_setting(section, setting, self.config_path, value)
-    
-    def settings_changed(
-        self,
-        section_name: Annotated[str, 'The name of the section.'],
-        setting_name: Annotated[str, 'The name of the setting that was changed.'],
-        value: Annotated[str, 'The value the setting was set too.']
-    ) -> None:
+        Returns:
+            set_job (SetJob): The job to handle the execution.
         """
-        Event emitter for the settings being changed.
+        return SetJob(
+            *args,
+            config=self.config_path,
+            shell=self.widget,
+            cmd=self.name
+        )
+
+        
+class SetJob(Job):
+    """
+    Job for handling setting shell variables.
+    
+    Args:
+        section_name (str): The name of the section.
+        setting_name (str): The name of the setting.
+        value (str): The value the setting was set to.
+        config (str): The path to the config.
+    """
+    
+    class SettingsChanged(Message):
+        """
+        Event for when a setting has been changed.
         
         Args:
             section_name (str): The name of the section.
             setting_name (str): The name of the setting.
             value (str): The value the setting was set to.
         """
-        self.widget.post_message(
+        
+        def __init__(
+            self,
+            section_name: Annotated[str, 'The name of the section.'],
+            setting_name: Annotated[str, 'The name of the setting that was changed.'],
+            value: Annotated[str, 'The value the setting was set to.']
+        ) -> None:
+            super().__init__()
+            self.section_name = section_name
+            self.setting_name = setting_name
+            self.value = value
+    
+    
+    def __init__(
+        self,
+        section: Annotated[str, 'Section name'],
+        setting: Annotated[str, 'Setting name'],
+        value: Annotated[str, 'value for the setting'],
+        config: Annotated[str, 'Path to the config.'],
+        *args, **kwargs
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.config = config
+        self.section = section
+        self.setting = setting
+        self.value = value
+    
+    async def execute(self) -> None:
+        """
+        Update the setting in the config.
+        """
+        self.status = self.Status.RUNNING
+        options = configure.get_setting_options(
+            self.section, self.setting, self.config
+        )
+            
+        if self.value is not None and self.value not in options:
+            self.send_log(
+                f'Invalid value: {self.value} for {self.section}.{self.setting}',
+                logging.ERROR
+            )
+            return
+        
+        self.send_log(
+            f'Updating setting: {self.section}.{self.setting}',
+            logging.INFO
+        )
+        configure.update_setting(
+            self.section,
+            self.setting,
+            self.config, 
+            self.value
+        )
+        self.shell.post_message(
             self.SettingsChanged(
-                section_name,
-                setting_name,
-                value
+                self.section,
+                self.setting,
+                self.value
             )
         )
-    
-    def execute(self, *args) -> int:
-        self.update_settings(*args)
-        self.settings_changed(*args)

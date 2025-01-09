@@ -1,4 +1,5 @@
-from time import monotonic, sleep
+from time import monotonic
+import asyncio
 
 from textual.app import ComposeResult
 from textual.containers import HorizontalGroup, VerticalScroll
@@ -7,7 +8,7 @@ from textual.screen import Screen
 from textual.widgets import Button, Digits, Footer, Header
 
 from textual_shell.commands import Command, CommandArgument
-
+from textual_shell.job import Job
 
 class TimeDisplay(Digits):
     """A widget to display elapsed time."""
@@ -161,6 +162,30 @@ class TimerScreen(Screen):
     def action_close(self) -> None:
         """"""
         self.app.pop_screen()
+        
+
+class TimerJob(Job):
+    
+    async def execute(self):
+        self.shell.post_message(
+            self.StatusChange(
+                self.id,
+                self.Status.RUNNING
+            )
+        )
+        self.shell.app.install_screen(self.screen, name=self.id)
+        
+        while not self.task.cancelled():
+            await asyncio.sleep(10)
+        
+        self.shell.app.uninstall_screen(self.screen)
+        
+        self.shell.post_message(
+            self.StatusChange(
+                self.id,
+                self.Status.COMPLETED
+            )
+        )
 
 
 class Timer(Command):
@@ -170,18 +195,10 @@ class Timer(Command):
         arg = CommandArgument('timer', 'Execute the timer app.')
         self.add_argument_to_cmd_struct(arg)
         
-    def execute(self):
-        self.send_screen(TimerScreen())
-
-
-class Sleep(Command):
-    
-    def __init__(self) -> None:
-        super().__init__()
-        arg = CommandArgument('sleep', 'Sleep for x seconds')
-        self.add_argument_to_cmd_struct(arg)
-        
-    def execute(self, seconds):
-        self.widget.post_message(self.Start())
-        sleep(int(seconds))
-        self.widget.post_message(self.Finish())
+    def create_job(self, *args):
+        """Create a timer instance"""
+        return TimerJob(
+            shell=self.widget,
+            cmd=self.name,
+            screen=TimerScreen()
+        )

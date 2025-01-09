@@ -1,11 +1,12 @@
 from typing import Annotated
 
 from textual.app import ComposeResult
-from textual.containers import Grid, Container
+from textual.containers import Grid 
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Markdown
 
 from .command import Command, CommandArgument
+from ..job import Job
 
 
 class HelpScreen(ModalScreen):
@@ -75,8 +76,36 @@ class HelpScreen(ModalScreen):
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Close help modal."""
         if event.button.id == 'close-button':
-            self.app.pop_screen()
+            self.dismiss(True)
+            
 
+class HelpJob(Job):
+    
+    def __init__(
+        self,
+        cmd_to_show: Annotated[Command, 'The command to generate the help screen for.'],
+        *args, **kwargs
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.cmd_to_show = cmd_to_show
+    
+    async def execute(self):
+        """Display the Help screen."""
+        self.shell.post_message(
+            self.StatusChange(
+                self.id,
+                self.Status.RUNNING
+            )
+        )
+        help_text = self.cmd_to_show.help()
+        help_screen = HelpScreen(help_text)
+        await self.shell.app.push_screen_wait(help_screen)
+        self.shell.post_message(
+            self.StatusChange(
+                self.id,
+                self.Status.COMPLETED
+            )
+        )
 
 class Help(Command):
     """
@@ -96,19 +125,11 @@ class Help(Command):
         help_text = f'### Command: {root.name}\n'
         help_text += f'**Description:** {root.description}'
         return help_text
-    
-    def execute(
-        self,
-        cmd: Command
-    ) -> Annotated[ModalScreen, 'A help screen to show as a modal.']:
-        """
-        execute the help for whatever command was requested.
         
-        Args:
-            cmd (Command): The requested command.
-            
-        Returns:
-            help_screen (HelpScreen): A modal for the app to render.
-        """
-        help_text = cmd.help()
-        self.send_screen(HelpScreen(help_text))
+    def create_job(self, *args) -> HelpJob:
+        """Create the job to display the help text."""
+        return HelpJob(
+            args[0],
+            shell=self.widget,
+            cmd=self.name
+        )
