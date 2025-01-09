@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "textual-shell"
-version = "0.9.6"
+version = "0.9.7"
 license = {file = "LICENSE"}
 authors = [
     { name="Jason Lawrence", email="thejasonlawrence1@gmail.com" },
@@ -24,4 +24,5 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Jason-Lawrence/textual-shell/"
+Repository = "https://github.com/Jason-Lawrence/textual-shell/"
+Documentation = "https://jason-lawrence.github.io/textual-shell/"
