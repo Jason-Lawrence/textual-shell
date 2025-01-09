@@ -10,7 +10,7 @@ from textual.widgets import Label, RichLog
 
 from .. import configure
 from ..job import Job
-from ..commands import Command
+from ..command import Command
 
 class ConsoleLog(Widget):
     """

@@ -7,7 +7,7 @@ from textual.message import Message
 
 from .. import configure
 from ..job import Job
-from .command import Command, CommandArgument
+from ..command import Command, CommandArgument
 
 
 class Set(Command):

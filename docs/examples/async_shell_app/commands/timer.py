@@ -7,7 +7,7 @@ from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Button, Digits, Footer, Header
 
-from textual_shell.commands import Command, CommandArgument
+from textual_shell.command import Command, CommandArgument
 from textual_shell.job import Job
 
 class TimeDisplay(Digits):

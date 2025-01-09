@@ -170,4 +170,3 @@ class Job(ABC):
         """Execute the async task for the job.
         Subclasses must implement this."""
         pass
-        

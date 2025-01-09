@@ -9,7 +9,7 @@ from textual.reactive import reactive
 from textual.widget import Widget
 from textual.widgets import Input, RichLog
 
-from ...commands import Command
+from ...command import Command
 from .prompt import Prompt, PromptInput
 from .suggestions import Suggestions
 

@@ -6,7 +6,8 @@ from textual.widgets import (
     RichLog
 )
 
-from .commands import Command, SetJob, JobsJob
+from .command import Command
+from .commands import SetJob, JobsJob
 from .job import Job
 from .widgets import (
     BaseShell,
