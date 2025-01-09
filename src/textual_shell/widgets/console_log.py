@@ -10,6 +10,7 @@ from textual.widgets import Label, RichLog
 
 from .. import configure
 from ..job import Job
+from ..commands import Command
 
 class ConsoleLog(Widget):
     """
@@ -18,13 +19,8 @@ class ConsoleLog(Widget):
     The different levels map to different colors for markup.
     Command names are magenta1 and all uppercase.
     
-    COLOR_MAPPING = {
-        logging.INFO: 'steel_blue1',
-        logging.DEBUG: 'green1',
-        logging.WARNING: 'yellow1',
-        logging.ERROR: 'bright_red',
-        logging.CRITICAL: 'dark_red'
-    }
+    Args:
+        config_path (str): The path to the config.
     """
     
     class Reload(Message):
@@ -98,9 +94,24 @@ class ConsoleLog(Widget):
                 self.config_path
             )
             self.post_message(self.Reload())
-            
         
-    def check_log_level(self, severity: int):
+    def check_log_level(
+        self,
+        severity: Annotated[int, 'The severity level of the log.']
+    ) -> Annotated[
+        bool, 
+        'True if the severity level is >= to the logging level.'
+    ]:
+        """
+        Check if the log level is greater or equal to the current logging
+        level
+        
+        Args:
+            severity (int): The severity level of the log.
+        
+        Returns:
+            check (bool): True if it is else False.
+        """
         current_level_name = configure.get_setting_value(
             'Logging',
             'console-lvl',
@@ -114,15 +125,15 @@ class ConsoleLog(Widget):
 
         return False
         
-    def gen_record(self, event: Job.Log) -> str:
+    def gen_record(self, event: Command.Log | Job.Log) -> str:
         """
-        Handle the log from the command.
+        Handle the log from the command or Job.
         
         Args:
             event (Command.Log)
             
         Returns:
-            msg (str): The formatted log message.
+            msg (str): The Rich formatted log.
         """
         if not self.check_log_level(event.severity):
             return None
@@ -131,7 +142,7 @@ class ConsoleLog(Widget):
         color = self.COLOR_MAPPING[event.severity]
         
         lvl = f'[{color}]{level_name}[/{color}]'
-        cmd = f'[bold magenta1]{event.command.upper()}[/bold magenta1]'
+        cmd = f'[bold magenta1]{event.sender.upper()}[/bold magenta1]'
         time = f"[steel_blue]{datetime.now().strftime('[%H:%M:%S]')}[/steel_blue]"
         
         msg = f'{time} {lvl}  {cmd} - {event.msg}'
