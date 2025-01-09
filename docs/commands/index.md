@@ -18,9 +18,3 @@ A command for interacting with jobs.
 A basic command for setting shell variables.
 
 [SET Reference](set.md){ .md-button .md-button--primary }
-
-
-## COMMAND
-This is the base class for commands. To make your own extend this class. A guide is [here](../custom_commands.md)
-
-[COMMAND Reference](command.md){ .md-button .md-button--primary }
