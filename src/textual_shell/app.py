@@ -6,7 +6,7 @@ from textual.widgets import (
     RichLog
 )
 
-from .commands import SetJob, JobsJob
+from .commands import Command, SetJob, JobsJob
 from .job import Job
 from .widgets import (
     BaseShell,
@@ -67,19 +67,35 @@ class BaseShellApp(App):
 
     def on_job_log(self, event: Job.Log) -> None:
         """
-        Catch any logs sent by any command and write 
-        them to the CommandLog widget.
+        Catch any logs sent by any Job and write 
+        them to the ConsoleLog widget.
         """
         event.stop()
         try:
-            command_log = self.query_one(ConsoleLog)
-            rich_log = command_log.query_one(RichLog)
-            log_entry = command_log.gen_record(event)
+            console_log = self.query_one(ConsoleLog)
+            rich_log = console_log.query_one(RichLog)
+            log_entry = console_log.gen_record(event)
             if log_entry:
                 rich_log.write(log_entry)
         
         except NoMatches as e:
             log(f'Console Log not found')
+            
+    def on_command_log(self, event: Command.Log) -> None:
+        """
+        Catch any logs sent by any Command and write
+        them to the ConsoleLog widget
+        """
+        event.stop()
+        try:
+            console_log = self.query_one(ConsoleLog)
+            rich_log = console_log.query_one(RichLog)
+            log_entry = console_log.gen_record(event)
+            if log_entry:
+                rich_log.write(log_entry)
+                
+        except NoMatches as e:
+            log(f'Console Log not found.')
         
     def on_job_push_screen(self, event: Job.PushScreen) -> None:
         """
