@@ -1,6 +1,6 @@
 import asyncio
 
-from textual_shell.command import Command
+from textual_shell.command import Command, CommandNode
 from textual_shell.job import Job
 
 class SleepJob(Job):
@@ -17,9 +17,10 @@ class SleepJob(Job):
 class Sleep(Command):
     
     DEFINITION = {
-        'sleep': {
-            'description': 'Sleep for x seconds.'
-        }
+        'sleep': CommandNode(
+            name='sleep',
+            description='Sleep for x seconds.'
+        ) 
     }
         
     def create_job(self, *args) -> SleepJob:
