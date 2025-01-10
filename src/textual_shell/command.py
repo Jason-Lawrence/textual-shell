@@ -1,11 +1,9 @@
 from typing import Annotated
 from abc import ABC, abstractmethod
 
-from textual import log
 from textual.message import Message
 
 from .job import Job
-from . import configure
 
 
 class Command(ABC):
@@ -118,7 +116,6 @@ class Command(ABC):
         Returns:
             help_text (str): The help text for the command with markdown syntax.
         """
-        log(self.DEFINITION)
         description = self.DEFINITION[self.name]['description']
         
         help_text = f'### Command: {self.name}\n'
