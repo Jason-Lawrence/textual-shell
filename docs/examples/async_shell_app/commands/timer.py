@@ -7,7 +7,7 @@ from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Button, Digits, Footer, Header
 
-from textual_shell.command import Command, CommandArgument
+from textual_shell.command import Command
 from textual_shell.job import Job
 
 class TimeDisplay(Digits):
@@ -178,10 +178,11 @@ class TimerJob(Job):
 
 class Timer(Command):
     
-    def __init__(self) -> None:
-        super().__init__()
-        arg = CommandArgument('timer', 'Execute the timer app.')
-        self.add_argument_to_cmd_struct(arg)
+    DEFINITION = {
+        'timer': {
+            'description': 'Execute the timer app.'
+        }
+    }
         
     def create_job(self, *args):
         """Create a timer instance"""

@@ -3,7 +3,7 @@ from typing import Annotated
 
 from textual.message import Message
 
-from ..command import Command, CommandArgument
+from ..command import Command
 from ..job import Job
 
 
@@ -59,18 +59,19 @@ class JobsJob(Job):
 class Jobs(Command):
     """"""
     
-    def __init__(self) -> None:
-        super().__init__()
-        root = CommandArgument('jobs', 'Manage jobs.')
-        root_index = self.add_argument_to_cmd_struct(root)
-        
-        attach = CommandArgument('attach', "Attach to the job's screen.")
-        at_index = self.add_argument_to_cmd_struct(attach, parent=root_index)
-
-        kill = CommandArgument('kill', 'Kill the job.')
-        k_index = self.add_argument_to_cmd_struct(kill, parent=root_index)
-        
-        self.jobs = []
+    DEFINITION = {
+        'jobs': {
+            'description': 'Manage jobs.',
+            'attach': {
+                'description': "Attach to the job's screen",
+            },
+            'kill': {
+                'description': 'Kill the job.'
+            }
+        }
+    }
+    
+    JOBS = []
         
     def get_suggestions(
         self,
@@ -98,7 +99,7 @@ class Jobs(Command):
         Args:
             job_id (str): Tht job to remove.
         """
-        self.jobs.append(job_id)
+        self.JOBS.append(job_id)
     
     def remove_job_id(self, job_id: str) -> None:
         """
@@ -107,7 +108,7 @@ class Jobs(Command):
         Args:
             job_id (str): Tht job to remove.
         """
-        self.jobs.remove(job_id)
+        self.JOBS.remove(job_id)
         
     def create_job(self, *args) -> JobsJob:
         """Create the job to manage other jobs."""
