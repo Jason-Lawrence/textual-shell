@@ -7,7 +7,7 @@ from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import Button, Digits, Footer, Header
 
-from textual_shell.command import Command
+from textual_shell.command import Command, CommandNode
 from textual_shell.job import Job
 
 class TimeDisplay(Digits):
@@ -179,9 +179,10 @@ class TimerJob(Job):
 class Timer(Command):
     
     DEFINITION = {
-        'timer': {
-            'description': 'Execute the timer app.'
-        }
+        'timer': CommandNode(
+            name='timer',
+            description='Execute the timer app.'
+        )
     }
         
     def create_job(self, *args):
