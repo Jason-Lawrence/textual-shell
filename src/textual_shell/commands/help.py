@@ -1,11 +1,11 @@
 from typing import Annotated
 
 from textual.app import ComposeResult
-from textual.containers import Grid 
+from textual.binding import Binding
 from textual.screen import ModalScreen
-from textual.widgets import Button, Label, Markdown
+from textual.widgets import RichLog
 
-from ..command import Command
+from ..command import Command, CommandNode
 from ..job import Job
 
 
@@ -17,6 +17,10 @@ class HelpScreen(ModalScreen):
     Args:
         help_text (str): The help text to display.
     """
+    BINDINGS = [
+        Binding('q', 'dismiss_screen', 'Close the help box.'),
+        Binding('escape', 'dismiss_screen', 'Close the help box.', show=False),
+    ]
     
     DEFAULT_CSS = """
         HelpScreen {
@@ -25,36 +29,12 @@ class HelpScreen(ModalScreen):
         }
 
         #help-dialog {
-            height: 60%;
-            width: 50%;
-            grid-size: 3;
-            grid-rows: 3 1fr 1fr;
-            grid-columns: 1fr 1fr 3;
+            height: auto;
+            width: auto;
             background: $surface;
-            border: solid white;
             padding: 0;
-        }
-            
-        #help-label {
-            column-span: 2;
-            row-span: 1;
-            text-align: center;
-            width: 100%;
-            offset: 0 1;
-            
-        }
-
-        #help-close {
-            padding: 0;
-            margin: 0;
-        }
-
-        #help-display {
-            column-span: 3;
-            row-span: 2;
-            margin: 0;
-            padding: 1;
-            border-top: solid white;
+            max-height: 75%;
+            max-width: 65%;
         }
     """
     
@@ -66,17 +46,16 @@ class HelpScreen(ModalScreen):
         self.help_text = help_text
     
     def compose(self) -> ComposeResult:
-        yield Grid(
-            Label('Help', id='help-label'),
-            Button('X', variant='error', id='close-button'),
-            Markdown(self.help_text, id='help-display'),
-            id='help-dialog'
-        )
+        yield RichLog(id='help-dialog', markup=True)
         
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Close help modal."""
-        if event.button.id == 'close-button':
-            self.dismiss(True)
+    def on_mount(self) -> None:
+        """Write the help text when the DOM is ready."""
+        rich_log = self.query_one(RichLog)
+        rich_log.write(self.help_text)
+        
+    def action_dismiss_screen(self) -> None:
+        """Close the help screen."""
+        self.dismiss(True)
             
 
 class HelpJob(Job):
@@ -106,9 +85,10 @@ class Help(Command):
         help <command>
     """
     DEFINITION = {
-        'help': {
-            'description': 'Show help for the command'
-        }
+        'help': CommandNode(
+            name='set',
+            description='Show the help dialog for the requested command.'
+        )
     }
         
     def create_job(self, *args) -> HelpJob:

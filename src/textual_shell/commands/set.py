@@ -3,10 +3,9 @@ from typing import Annotated
 
 from textual.message import Message
 
-
 from .. import configure
 from ..job import Job
-from ..command import Command
+from ..command import Command, CommandNode
 
 
 class SetJob(Job):
@@ -104,9 +103,10 @@ class Set(Command):
     """
     
     DEFINITION = {
-        'set': {
-            'description': 'Set Shell variables and update the config.yml'
-        }
+        'set': CommandNode(
+            name='set',
+            description='Set shell variables and update the config file.'
+        ) 
     }
     
     def __init__(
@@ -115,17 +115,31 @@ class Set(Command):
     ) -> None:
         super().__init__()
         self.config_path = config_path
-        
         self.load_sections()
         
     def load_sections(self) -> None:
         """Load the settings from the config file 
         into the command definition."""
-        self.DEFINITION['set'].update(
-            configure.get_config(
-                self.config_path
+        root = self.get_root()
+        data = configure.get_config(self.config_path)
+        
+        for key in data:
+            node = CommandNode(
+                name=key,
+                description=data[key]['description']
             )
-        )
+            root.children[key] = node
+            
+            for setting in data[key]:
+                if setting == 'description':
+                    continue
+                
+                node.children[setting] = CommandNode(
+                    name=setting,
+                    description=data[key][setting]['description'],
+                    value=data[key][setting]['value'],
+                    options=data[key][setting].get('options', None)
+                )
     
     def create_job(self, *args) -> 'SetJob':
         """

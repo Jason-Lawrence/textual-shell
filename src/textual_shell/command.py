@@ -1,9 +1,101 @@
-from typing import Annotated
+from typing import Annotated, Optional
 from abc import ABC, abstractmethod
 
+from rich.console import (
+    Console,
+    ConsoleOptions,
+    group,
+    RenderResult
+)
+from rich.panel import Panel
+from rich.rule import Rule
+
+from textual import log
 from textual.message import Message
 
 from .job import Job
+
+
+class CommandNode:
+    """
+    Nodes for the command Definition.
+    
+    Args:
+        name (str): The name for the node.
+        description (str): The description for the node.
+        value (Optional[str]): Optional value for the node
+        options (Optional[list[str] | dict[str, str]]): 
+            Optional values for the node.
+            
+    """
+    
+    def __init__(
+        self,
+        name: Annotated[str, 'The name for the node.'],
+        description: Annotated[str, 'A description for the node.'],
+        value: Annotated[Optional[str], 'Optional value for the node']=None,
+        options: Annotated[Optional[list[str] | dict[str, str]], 'Optional list of values.']=None,
+        children: Annotated[Optional[dict[str, 'CommandNode']], 'Optional dictionary of child nodes.']=None
+    ) -> None:
+        self.name = name
+        self.description = description
+        self.value = value
+        self.options = options
+        self.children = children or {}
+        
+    def get_options(self) -> list[str]:
+        """
+        Retrieve the nodes options for it value.
+        If options is a dictionary then the keys are returned.
+        
+        Returns:
+            options (list[str]): The options.
+        
+        """
+        if isinstance(self.options, list):
+            return self.options
+        
+        elif isinstance(self.options, dict):
+            return list(self.options.keys())
+        
+        return []
+        
+    def __rich_console__(
+        self,
+        console: Console,
+        opt: ConsoleOptions
+    ) -> RenderResult:
+        yield f'[bold]{self.name}\n'
+        yield f'  [bold]Description:[/bold] {self.description}\n'
+        
+        if isinstance(self.options, list):
+            options = '  [bold]options:[/bold]\n'
+            options += ''.join([f'    [red]-[/red] {val}\n' for val in self.options])
+            yield options
+            
+        elif isinstance(self.options, dict):
+            options = '  [bold]options:[/bold]\n'
+            options += ''.join([f'    [red]{key}:[/red] {val}\n' for key, val in self.options.items()])
+            yield options
+            
+        if len(self.children) > 0:
+            for child in self.children.values():
+                yield child
+                     
+    
+    def __str__(self) -> str:
+        pass
+    
+    def __repr__(self) -> str:
+        return f"""
+            CommandNode(
+                name={self.name},
+                description={self.description},
+                value={self.value},
+                options={self.options},
+                children={self.children}
+            )
+        """
 
 
 class Command(ABC):
@@ -29,15 +121,31 @@ class Command(ABC):
             self.sender = sender
             self.msg = msg
             self.severity = severity
-    
+
 
     @property
     @abstractmethod
-    def DEFINITION(self):
+    def DEFINITION(
+        self
+    ) -> Annotated[dict[str, CommandNode], 'The definition for the command.']:
+        """
+        Abstract property for representing the command definition.
+        Subclasses must provide their own definitions as a dictionary 
+        mapping node names to CommandNode instances.
+        """
         pass
             
     def __init__(self) -> None:
         self.name = self.__class__.__name__.lower()
+        
+    def get_root(self) -> CommandNode:
+        """
+        Get the root of the Command Definition.
+        
+        Returns:
+            root (CommandNode): The root of the Command.
+        """
+        return self.DEFINITION.get(self.name)
         
     def get_suggestions(
         self,
@@ -52,86 +160,49 @@ class Command(ABC):
         Returns:
             suggestions (list[str]): List of possible next values.
         """
-        sub = self.DEFINITION
-        for key in cmdline:
-            if new_sub := sub.get(key, None):
-                sub = new_sub
+        cmd_def = self.DEFINITION
+        for node_name in cmdline:
+            node = cmd_def.get(node_name, None)
+            if node is None:
+                return []
         
-        if options := sub.get('options', None):
-            if isinstance(options, list):
-                return options
+            cmd_def = node.children    
+        
+        if len(node.children) == 0:
+           return node.get_options()
             
-            elif isinstance(options, dict):
-                return list(options.keys())
-        
-        else:
-            return [key for key in sub.keys() if key != 'description']
-
-    def recurse_definition(
-        self,
-        arg: Annotated[str, 'The level of the substructure'],
-        sub: Annotated[dict[str, dict | list | str], 'A sub dict in the definition.']
-    )-> Annotated[str, 'The help text for all of the sub structures.']:
+        return list(node.children.keys())
+    
+    @group()
+    def get_help_render(self, root: CommandNode):
         """
-        Recurse through the command definition and generate the help text.
+        Generate the rich markup for the help box.
         
         Args:
-            key (str): The key in the definition.
-            sub (dict[str, dict | list | str] | Any): A sub structure in 
-                the definition.
-                
-        Returns:
-            help_text (str): The help text for all of the sub structures
-                in the definition.
-        """
-        help_text = f'**{arg}:**  \n'
-        for key, val in sub.items():
-            if key == 'description':
-                help_text += f'&nbsp;&nbsp;&nbsp;&nbsp;**description:** {val}  \n'
+            root (CommandNode): The root of the commands definition.
             
-            elif key == 'options':
-                help_text += '&nbsp;&nbsp;&nbsp;&nbsp;**options:**  \n'
-                if isinstance(val, list):
-                    options = [f'&nbsp;&nbsp;&nbsp;&nbsp;- {v}  \n' for v in val]
-                    help_text += ''.join(options)
-                
-                elif isinstance(val, dict):
-                    options = [f'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**{k}:** {v}  \n' for k, v in val.items()]
-                    help_text += ''.join(options)
-                    
-            elif key == 'value':
-                continue
-                
-            else:
-                help_text += '&nbsp;&nbsp; '+ self.recurse_definition(key, val)
-        
-        return help_text
-        
-        
-    
-    def help(self) -> Annotated[str, 'The help text for the command.']:
+        Yields:
+            group (rich.console.Group): The rich renderable components for the command definition.
         """
-        Generates the Help text for the command.
+        yield f'[bold]Command: [magenta1]{root.name}\n'
+        yield f'[bold underline][plum2]Description:[/bold underline] {root.description}'
+        
+        if len(root.children.keys()) > 0:
+            yield Rule('[bold]Arguments', style='white')
+            for child in root.children.values():
+                yield child
+                
+    def help(self) -> RenderResult:
+        """
+        Generate the rich.panel to display in the Help modals RichLog widget.
         
         Returns:
-            help_text (str): The help text for the command with markdown syntax.
+            panel (rich.panel.Panel): The panel with the help for the command.
         """
-        description = self.DEFINITION[self.name]['description']
-        
-        help_text = f'### Command: {self.name}\n'
-        help_text += f'**Description:** {description}\n'
-        help_text += '---\n'
-        
-        sub = self.DEFINITION.get(self.name)
-        for key, val in sub.items():
-            if key == 'description':
-                continue
-
-            else:
-                help_text += self.recurse_definition(key, val)
-        
-        return help_text
-        
+        root_node = self.get_root()
+        panel_text = self.get_help_render(root_node)
+        return Panel(panel_text, title='[cyan1]Help')
+         
     @abstractmethod
     def create_job(self, *args) -> Job:
         """

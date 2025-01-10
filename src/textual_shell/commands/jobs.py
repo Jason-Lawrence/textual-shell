@@ -3,7 +3,7 @@ from typing import Annotated
 
 from textual.message import Message
 
-from ..command import Command
+from ..command import Command, CommandNode
 from ..job import Job
 
 
@@ -57,40 +57,46 @@ class JobsJob(Job):
 
 
 class Jobs(Command):
-    """"""
+    """Command for interacting with the jobs running in the shell."""
     
     DEFINITION = {
-        'jobs': {
-            'description': 'Manage jobs.',
-            'attach': {
-                'description': "Attach to the job's screen",
-            },
-            'kill': {
-                'description': 'Kill the job.'
+        'jobs': CommandNode(
+            name='jobs',
+            description='Manage jobs.',
+            children={
+                'attach': CommandNode(
+                    name='attach',
+                    description="Attach to the job's screen."
+                ),
+                'kill': CommandNode(
+                    name='kill',
+                    description='Kill the job.'
+                )
             }
-        }
+        )
     }
     
     JOBS = []
         
     def get_suggestions(
         self,
-        current_arg: str
+        cmdline: Annotated[list[str], 'The current value of the command line.']
     ) -> Annotated[list[str], 'A list of possible next values']:
         """
         Get a list of suggestions for autocomplete via the current args neighbors.
         
         Args:
-            current_arg (str): The current arg in the command line.
+            cmdline (list[str]): The current value of the  command line.
             
         Returns:
             suggestions (List[str]): List of current node's neighbors names.
         """
-        if current_arg == 'kill' or current_arg == 'attach':
-            return self.jobs
+        if len(cmdline) == 2:
+            if cmdline[1] == 'kill' or cmdline[1] == 'attach':
+                return self.JOBS
         
         else:
-            return super().get_suggestions(current_arg)
+            return super().get_suggestions(cmdline)
 
     def add_job_id(self, job_id: str) -> None:
         """
