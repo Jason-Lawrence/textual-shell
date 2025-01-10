@@ -65,8 +65,7 @@ class BaseShellApp(App):
         event.stop()
         shell = self._get_shell()
         if set := shell.get_cmd_obj('set'):
-            set.cmd_struct.clear()
-            set._load_sections_into_struct()
+            set.load_sections()
         
         try:
             settings_display = self.query_one(SettingsDisplay)
