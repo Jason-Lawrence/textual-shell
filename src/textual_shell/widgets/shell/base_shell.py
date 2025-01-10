@@ -285,7 +285,7 @@ class BaseShell(Widget):
             
             else:
                 if cmd := self.get_cmd_obj(cmd_input[0]):
-                    suggestions = cmd.get_suggestions(cmd_input[-2])
+                    suggestions = cmd.get_suggestions(cmd_input[:-1])
                 
                 else:
                     suggestions = []

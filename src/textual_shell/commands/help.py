@@ -5,7 +5,7 @@ from textual.containers import Grid
 from textual.screen import ModalScreen
 from textual.widgets import Button, Label, Markdown
 
-from ..command import Command, CommandArgument
+from ..command import Command
 from ..job import Job
 
 
@@ -92,12 +92,11 @@ class HelpJob(Job):
     async def execute(self):
         """Display the Help screen."""
         self.running()
-        
         help_text = self.cmd_to_show.help()
         help_screen = HelpScreen(help_text)
         await self.shell.app.push_screen_wait(help_screen)
-        
         self.completed()
+
 
 class Help(Command):
     """
@@ -106,17 +105,11 @@ class Help(Command):
     Examples:
         help <command>
     """
-    def __init__(self) -> None:
-        super().__init__()
-        arg = CommandArgument('help', 'Show help for commands')
-        self.add_argument_to_cmd_struct(arg)
-        
-    def help(self):
-        """Generate the help text for the help command."""
-        root = self.cmd_struct.get_node_data(0)
-        help_text = f'### Command: {root.name}\n'
-        help_text += f'**Description:** {root.description}'
-        return help_text
+    DEFINITION = {
+        'help': {
+            'description': 'Show help for the command'
+        }
+    }
         
     def create_job(self, *args) -> HelpJob:
         """Create the job to display the help text."""
