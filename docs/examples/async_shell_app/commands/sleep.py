@@ -1,6 +1,6 @@
 import asyncio
 
-from textual_shell.command import Command, CommandArgument
+from textual_shell.command import Command
 from textual_shell.job import Job
 
 class SleepJob(Job):
@@ -10,26 +10,17 @@ class SleepJob(Job):
         self.seconds = int(seconds)
     
     async def execute(self):
-        self.shell.post_message(
-            self.StatusChange(
-                self.id,
-                self.Status.RUNNING
-            )
-        )
+        self.running()
         await asyncio.sleep(self.seconds)
-        self.shell.post_message(
-            self.StatusChange(
-                self.id,
-                self.Status.COMPLETED
-            )
-        )
+        self.completed()
 
 class Sleep(Command):
     
-    def __init__(self) -> None:
-        super().__init__()
-        arg = CommandArgument('sleep', 'Sleep for x seconds')
-        self.add_argument_to_cmd_struct(arg)
+    DEFINITION = {
+        'sleep': {
+            'description': 'Sleep for x seconds.'
+        }
+    }
         
     def create_job(self, *args) -> SleepJob:
         return SleepJob(
