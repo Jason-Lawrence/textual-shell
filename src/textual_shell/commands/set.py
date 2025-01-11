@@ -59,7 +59,7 @@ class SetJob(Job):
         """
         Update the setting in the config.
         """
-        self.status = self.Status.RUNNING
+        self.running()
         options = configure.get_setting_options(
             self.section, self.setting, self.config
         )
@@ -88,6 +88,7 @@ class SetJob(Job):
                 self.value
             )
         )
+        self.completed()
 
 
 class Set(Command):
@@ -154,6 +155,6 @@ class Set(Command):
         return SetJob(
             *args,
             config=self.config_path,
-            shell=self.widget,
+            shell=self.shell,
             cmd=self.name
         )
