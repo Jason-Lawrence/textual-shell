@@ -10,7 +10,6 @@ from rich.console import (
 from rich.panel import Panel
 from rich.rule import Rule
 
-from textual import log
 from textual.message import Message
 
 from .job import Job
@@ -137,6 +136,27 @@ class Command(ABC):
             
     def __init__(self) -> None:
         self.name = self.__class__.__name__.lower()
+        
+    def send_log(
+        self,
+        msg: Annotated[str, 'The message for the log.'],
+        severity: Annotated[int, 'Same severity levels as the logging module.']
+    ) -> None:
+        """
+        Send logs from the command to the console log.
+        
+        Args:
+            msg (str): The message for the log.
+            severity (int): The severity level for the log. 
+                Uses the same levels as the logging module.
+        """
+        self.shell.post_message(
+            self.Log(
+                self.name,
+                msg,
+                severity
+            )
+        )
         
     def get_root(self) -> CommandNode:
         """
