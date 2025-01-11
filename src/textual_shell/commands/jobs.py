@@ -118,7 +118,7 @@ class Jobs(Command):
         
     def create_job(self, *args) -> JobsJob:
         """Create the job to manage other jobs."""
-        if len(args) != 1:
+        if len(args) != 2:
             self.send_log('Invalid args', logging.ERROR)
             return
         
