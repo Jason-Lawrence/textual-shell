@@ -102,6 +102,14 @@ class Shell(BaseShell):
                     
             else:
                 job = cmd.create_job(*cmd_args)
+                if job is None:
+                    self.notify(
+                        f'[b]Command:[/b] {cmd_name} failed to create job',
+                        severity='error',
+                        title='Job Failed'
+                    )
+                    return
+                
                 self.start_job(job)
         
         else:
@@ -114,6 +122,7 @@ class Shell(BaseShell):
             return
         
         self.history_list.appendleft(cmdline)
+        self.history_count += 1
         self.mutate_reactive(Shell.history_list)
         self.current_history_index = None
 
