@@ -2,6 +2,12 @@
 
 The below commands are available to use with in the shell.
 
+## CLEAR
+A basic command for clearing the console and history logs.
+
+[CLEAR Reference](clear.md){ .md-button .md-button--primary }
+
+
 ## HELP
 A basic command for showing the help text of a command.
 

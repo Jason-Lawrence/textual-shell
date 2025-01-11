@@ -25,7 +25,7 @@ class Sleep(Command):
         
     def create_job(self, *args) -> SleepJob:
         return SleepJob(
-            shell=self.widget,
+            shell=self.shell,
             cmd=self.name,
             seconds=args[0]
         )

@@ -188,7 +188,7 @@ class Timer(Command):
     def create_job(self, *args):
         """Create a timer instance"""
         return TimerJob(
-            shell=self.widget,
+            shell=self.shell,
             cmd=self.name,
             screen=TimerScreen()
         )
