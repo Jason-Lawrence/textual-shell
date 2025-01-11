@@ -7,16 +7,11 @@ from ..command import Command, CommandNode
 from ..job import Job
 
 
-class JobsJob(Job):
+class Attach(Job):
+    """Job to attach to the screen of the selected job."""
     
-    class Attach(Message):
-        """Message to attach to a jobs screen"""
-        def __init__(self, job_id):
-            super().__init__()
-            self.job_id = job_id
-            
-    class Kill(Message):
-        """Message to kill a job."""
+    class To_Job(Message):
+        """Message to attach to the job."""
         def __init__(self, job_id):
             super().__init__()
             self.job_id = job_id
@@ -24,36 +19,48 @@ class JobsJob(Job):
     def __init__(
         self,
         selected_job: Annotated[str, 'The id of the selected job.'],
-        sub_command: Annotated[str, 'Whether to attach or kill the selected job.'],
         *args, **kwargs
     ) -> None:
         super().__init__(*args, **kwargs)
         self.selected_job = selected_job
-        self.sub_command = sub_command
         
     async def execute(self):
-        """"""
+        """Send request to attach to the selected job."""
+        self.running()
         self.shell.post_message(
-            self.StatusChange(
-                self.id,
-                self.Status.RUNNING
+            self.To_Job(
+                self.selected_job
             )
         )
-        if self.sub_command == 'attach':
-            self.shell.post_message(
-                self.Attach(self.selected_job)
-            )
+        self.completed()
         
-        else:
-            self.shell.post_message(
-                self.Kill(self.selected_job)
-            )
+        
+class Kill(Job):
+    """Job to kill another job."""
+    
+    class Selected(Message):
+        """Message to kill the selected job."""
+        def __init__(self, job_id):
+            super().__init__()
+            self.job_id = job_id
+    
+    def __init__(
+        self,
+        selected_job: Annotated[str, 'The id of the selected job.'],
+        *args, **kwargs
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.selected_job = selected_job
+        
+    async def execute(self):
+        """Send the request to kill the selected job."""
+        self.running()
         self.shell.post_message(
-            self.StatusChange(
-                self.id,
-                self.Status.COMPLETED
+            self.Selected(
+                self.selected_job
             )
         )
+        self.completed()
 
 
 class Jobs(Command):
@@ -116,24 +123,22 @@ class Jobs(Command):
         """
         self.JOBS.remove(job_id)
         
-    def create_job(self, *args) -> JobsJob:
+    def create_job(self, *args) -> Attach | Kill:
         """Create the job to manage other jobs."""
         if len(args) != 2:
             self.send_log('Invalid args', logging.ERROR)
             return
         
         if args[0] == 'attach':
-            return JobsJob(
+            return Attach(
                 selected_job=args[1],
-                sub_command='attach',
                 shell=self.shell,
                 cmd=self.name
             )
             
         elif args[0] == 'kill':
-            return JobsJob(
+            return Kill(
                 selected_job=args[1],
-                sub_command='kill',
                 shell=self.shell,
                 cmd=self.name
             )

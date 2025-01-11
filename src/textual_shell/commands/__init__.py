@@ -1,6 +1,6 @@
 from .clear import Clear, Console, History 
 from .help import Help, HelpScreen, HelpJob
-from .jobs import Jobs, JobsJob
+from .jobs import Jobs, Attach, Kill 
 from .set import Set, SetJob
 
 
