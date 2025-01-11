@@ -1,12 +1,16 @@
+from .clear import Clear, Console, History 
 from .help import Help, HelpScreen, HelpJob
-from .set import Set, SetJob
 from .jobs import Jobs, JobsJob
+from .set import Set, SetJob
 
 
 __all__ = [
+    'Clear',
+    'Console',
     'Help',
     'HelpScreen',
     'HelpJob',
+    'History',
     'Jobs',
     'JobsJob',
     'Set',

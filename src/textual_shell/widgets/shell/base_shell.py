@@ -33,6 +33,7 @@ class BaseShell(Widget):
     are_suggestions_focused = reactive(False)
     show_suggestions = reactive(False)
     history_list: reactive[deque[str]] = reactive(deque)
+    history_count = 0;
     
     BINDINGS = [
         Binding('up', 'up_history', 'Cycle up through the history'),
@@ -54,7 +55,7 @@ class BaseShell(Widget):
         self.current_history_index = None
         
         for cmd in self.commands:
-            cmd.widget = self
+            cmd.shell = self
             
     def _get_prompt(self) -> Prompt:
         """
@@ -148,7 +149,7 @@ class BaseShell(Widget):
         ol.styles.offset = (
             self.prompt_input_offset.x + cursor,
             self.prompt_input_offset.y + min(
-                len(self.history_list), rich_log.styles.max_height.value
+                self.history_count, rich_log.styles.max_height.value
             )
         )
 

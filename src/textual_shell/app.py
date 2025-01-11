@@ -7,7 +7,12 @@ from textual.widgets import (
 )
 
 from .command import Command
-from .commands import SetJob, JobsJob
+from .commands import (
+    SetJob,
+    JobsJob,
+    Console,
+    History
+)
 from .job import Job
 from .widgets import (
     BaseShell,
@@ -105,6 +110,30 @@ class BaseShellApp(App):
                 
         except NoMatches as e:
             log(f'Console Log not found.')
+            
+    def on_console_clear(self, event: Console.Clear):
+        """Handler for clearing the console."""
+        event.stop()
+        try:
+            console_log = self.query_one(ConsoleLog)
+            rich_log = console_log.query_one(RichLog)
+            rich_log.clear()
+            
+        except NoMatches as e:
+            pass      
+    
+    def on_history_clear(self, event: History.Clear):
+        """Handler for clearing the history log."""
+        event.stop()
+        try:
+            shell = self._get_shell()
+            history = shell.query_one(RichLog)
+            history.clear()
+            shell.history_count = 0
+            shell.update_suggestions_location(0)
+            
+        except NoMatches as e:
+            pass
         
         
 class ShellApp(BaseShellApp):

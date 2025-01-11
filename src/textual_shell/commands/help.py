@@ -95,6 +95,6 @@ class Help(Command):
         """Create the job to display the help text."""
         return HelpJob(
             args[0],
-            shell=self.widget,
+            shell=self.shell,
             cmd=self.name
         )

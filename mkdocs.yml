@@ -42,6 +42,7 @@ nav:
 
   - Commands:
     - commands/index.md
+    - CLEAR: commands/clear.md
     - HELP: commands/help.md
     - JOBS: commands/jobs.md
     - SET: commands/set.md

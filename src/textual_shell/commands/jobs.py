@@ -118,14 +118,15 @@ class Jobs(Command):
         
     def create_job(self, *args) -> JobsJob:
         """Create the job to manage other jobs."""
-        if len(args) != 2:
+        if len(args) != 1:
             self.send_log('Invalid args', logging.ERROR)
+            return
         
         if args[0] == 'attach':
             return JobsJob(
                 selected_job=args[1],
                 sub_command='attach',
-                shell=self.widget,
+                shell=self.shell,
                 cmd=self.name
             )
             
@@ -133,12 +134,12 @@ class Jobs(Command):
             return JobsJob(
                 selected_job=args[1],
                 sub_command='kill',
-                shell=self.widget,
+                shell=self.shell,
                 cmd=self.name
             )
         
         else:
-            self.widget.notify(
+            self.shell.notify(
                 message='Invalid subcommand.',
                 title='Command: jobs',
                 severity='error'
