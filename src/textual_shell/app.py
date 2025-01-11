@@ -8,10 +8,11 @@ from textual.widgets import (
 
 from .command import Command
 from .commands import (
-    SetJob,
-    JobsJob,
+    Attach,
     Console,
-    History
+    History,
+    Kill,
+    SetJob
 )
 from .job import Job
 from .widgets import (
@@ -161,13 +162,13 @@ class BaseShellApp(App):
         job_manager = self._get_job_manager()
         job_manager.update_job_status(event.job_id, event.status)
 
-    def on_jobs_job_attach(self, event: JobsJob.Attach) -> None:
+    def on_attach_to_job(self, event: Attach.To_Job) -> None:
         """Attach to the jobs screen."""
         event.stop()
         job_manager = self._get_job_manager()
         job_manager.switch_job_screen(event.job_id)
 
-    def on_jobs_job_kill(self, event: JobsJob.Kill) -> None:
+    def on_kill_selected(self, event: Kill.Selected) -> None:
         """Kill the job."""
         event.stop()
         job_manager =self._get_job_manager()
