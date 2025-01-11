@@ -134,30 +134,6 @@ class BaseShellApp(App):
             
         except NoMatches as e:
             pass
-        
-        
-class ShellApp(BaseShellApp):
-    """
-    App to use with a normal shell. 
-    """
-    def on_job_start(self, event: Job.Start) -> None:
-        """Catch when a command has started, and disable the input widget"""
-        event.stop()
-        shell = self.query_one(BaseShell)
-        prompt_input = shell._get_prompt_input()
-        prompt_input.disabled = True
-        
-    def on_job_finish(self, event: Job.Finish) -> None:
-        """Catch when a command has finished, and re-enable the input widget"""
-        event.stop()
-        shell = self.query_one(BaseShell)
-        prompt_input = shell._get_prompt_input()
-        prompt_input.disabled = False
-        prompt_input.focus()
-        
-
-class AsyncShellApp(BaseShellApp):
-    """App to use with the Asynchronous shell."""
     
     def on_job_start(self, event: Job.Start) -> None:
         """Add new jobs."""

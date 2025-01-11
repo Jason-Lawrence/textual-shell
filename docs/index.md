@@ -14,7 +14,7 @@ pip install textual-shell
 ```
 
 ```py title='Basic Shell'
---8<-- "docs/examples/async_shell_app/async_app.py"
+--8<-- "docs/examples/basic_shell_app/basic_app.py"
 ```
 
 Below is an example config file. The descriptions are used by the help command. 

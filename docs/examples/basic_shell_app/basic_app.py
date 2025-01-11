@@ -4,18 +4,20 @@ from textual.app import ComposeResult
 from textual.containers import Grid, Container
 from textual.widgets import Header, Footer
 
-from textual_shell.app import ShellApp
-from textual_shell.commands import Help, Set
+from textual_shell.app import BaseShellApp
+from textual_shell.commands import Clear, Help, Set, Jobs
 from textual_shell.widgets import (
+    Shell,
     CommandList,
     ConsoleLog,
+    JobManager,
     SettingsDisplay,
-    Shell
 )
 
-import commands
+from commands import Sleep, Timer
 
-class BasicShell(ShellApp):
+
+class BasicShell(BaseShellApp):
     
     CSS = """
         #app-grid {
@@ -26,14 +28,12 @@ class BasicShell(ShellApp):
         }
     """
     
-    #CSS_PATH = 'style.css'
-    
     theme = 'tokyo-night'
 
     CONFIG_PATH = os.path.join(os.getcwd(), '.config.yaml')
     HISTORY_LOG = os.path.join(os.environ.get('HOME', os.getcwd()), '.shell_history.log')
     
-    cmd_list = [Help(), Set(CONFIG_PATH), commands.Timer(), commands.Sleep()]
+    cmd_list = [Clear(), Help(), Set(CONFIG_PATH), Jobs(), Sleep(), Timer()]
     command_names = [cmd.name for cmd in cmd_list]
     
     def compose(self) -> ComposeResult:
@@ -48,6 +48,7 @@ class BasicShell(ShellApp):
             SettingsDisplay(self.CONFIG_PATH),
             Container(),
             ConsoleLog(self.CONFIG_PATH),
+            JobManager(),
             id='app-grid'
         )
         
