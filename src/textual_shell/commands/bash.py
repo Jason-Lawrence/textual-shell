@@ -36,13 +36,14 @@ class BashTextArea(TextArea):
     current_history_index = None
     prompt = reactive(str)
     multiline = False
-        
+
+    def on_mount(self):
+        self.action_cursor_line_end()
+
     def watch_prompt(self, prompt) -> None:
         """"""
-        self.limit = len(self.prompt)
         self.clear()
-        self.text = self.prompt
-        self.action_cursor_line_end()
+        self.insert(self.prompt)
     
     def action_enter_pressed(self):
         """
@@ -53,19 +54,16 @@ class BashTextArea(TextArea):
         text = self.text
         if text.endswith('\\'):
             self.insert('\n> ')
-            self.limit = len(self.text)
             self.multiline = True
             return
         
         else:
             text = text[len(self.prompt):]
-            log(f'Command: {text}')
             self.post_message(self.Execute(text))
         
         self.current_history_index = None
         self.action_clear()
         self.action_cursor_line_end()
-        self.limit = len(self.prompt)
         self.multiline = False
         
     def action_clear(self):
@@ -117,10 +115,11 @@ class BashTextArea(TextArea):
         self.action_cursor_line_end()
         
     def _on_key(self, event: events.Key) -> None:
-        if event.character == '\x7f':
-            if len(self.text) == self.limit:
-                event.prevent_default()
-                event.stop()
+        if event.character == '\x7f' or event.key == 'left':
+            if (self.cursor_location[1] == 2 or 
+                self.cursor_location[1] == len(self.prompt)):
+                    event.prevent_default()
+                    event.stop()
 
 
 class BashShell(Screen):
@@ -220,18 +219,23 @@ class BashShell(Screen):
         event: BashTextArea.Execute
     ) -> None:
         """"""
-        text = event.text.replace('\\\n> ', '')
-        self.BASH_SHELL.stdin.write(text.encode() + b'\n')
-        await self.BASH_SHELL.stdin.drain()
-        
         rich_log = self.query_one(RichLog)
-        rich_log.write(self.prompt + event.text)
-        
         text_area = self.query_one(BashTextArea)
         
+        text = event.text.replace('\\\n> ', '').strip()
+            
         if text != '':
             text_area.history_list.appendleft(text)
+            
+        if text == 'clear':
+            rich_log.clear()
+            return
         
+        self.BASH_SHELL.stdin.write(text.encode() + b'\n')
+        await self.BASH_SHELL.stdin.drain()
+          
+        rich_log.write(self.prompt + event.text)
+
     async def update_from_stdout(self, output) -> None:
         """Take stdout and write it to the RichLog."""
         rich_log = self.query_one(RichLog)
