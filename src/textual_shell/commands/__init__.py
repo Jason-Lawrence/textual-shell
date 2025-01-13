@@ -1,3 +1,4 @@
+from .bash import Bash, BashShell, RunBashShell
 from .clear import Clear, Console, History 
 from .help import Help, HelpScreen, HelpJob
 from .jobs import Jobs, Attach, Kill 
@@ -5,6 +6,9 @@ from .set import Set, SetJob
 
 
 __all__ = [
+    'Attach',
+    'Bash',
+    'BashShell',
     'Clear',
     'Console',
     'Help',
@@ -12,7 +16,8 @@ __all__ = [
     'HelpJob',
     'History',
     'Jobs',
-    'JobsJob',
+    'Kill',
+    'RunBashShell',
     'Set',
     'SetJob'
 ]
