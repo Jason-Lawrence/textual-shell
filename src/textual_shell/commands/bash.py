@@ -1,5 +1,7 @@
 import asyncio
 import os
+from collections import deque
+from typing import Annotated
 
 from textual import log
 from textual.app import ComposeResult
@@ -24,11 +26,16 @@ class BashTextArea(TextArea):
     
     BINDINGS = [
         Binding('enter', 'enter_pressed', 'execute command', priority=True),
-        Binding('ctrl+c', 'interrupt', )
+        Binding('ctrl+c', 'clear', 'Interrupt the current command line.'),
+        Binding('up', 'up_history', 'Cycle up through the history.', show=False),
+        Binding('down', 'down_history', 'Cycle down through the history', show=False),
+        Binding('backspace', 'delete', 'delete the character unless its the prompt.', show=False)
     ]
     
     language='bash'
-    
+    history_list: reactive[deque[str]] = reactive(deque)
+    current_history_index = None
+        
     def action_enter_pressed(self):
         """
         Handler for the enter key.
@@ -45,6 +52,45 @@ class BashTextArea(TextArea):
         
         self.clear()
         self.action_cursor_line_start()
+        
+    def action_clear(self):
+        self.clear()
+        
+    def action_up_history(self):
+        """When the up arrow is hit cycle upwards through the history."""
+        if len(self.history_list) == 0:
+            return
+        
+        if self.current_history_index is None:
+            self.current_history_index = 0
+        
+        elif self.current_history_index == len(self.history_list) - 1:
+            return
+        
+        else:
+            self.current_history_index += 1
+        
+        previous_cmd = self.history_list[self.current_history_index]
+        self.text = previous_cmd
+        self.action_cursor_line_end()
+        
+    def action_down_history(self):
+        """When the down arrow key is pressed cycle downwards through the history."""
+        if len(self.history_list) == 0:
+            return
+        
+        if self.current_history_index == 0:
+            self.current_history_index = None
+            self.clear()
+            return
+        
+        elif self.current_history_index is None:
+            return
+        
+        self.current_history_index -= 1
+        previous_cmd = self.history_list[self.current_history_index]
+        self.text = previous_cmd
+        self.action_cursor_line_end()
 
 
 class BashShell(Screen):
@@ -145,6 +191,11 @@ class BashShell(Screen):
         
         rich_log = self.query_one(RichLog)
         rich_log.write(self.prompt + event.text)
+        
+        text_area = self.query_one(BashTextArea)
+        
+        if text != '':
+            text_area.history_list.appendleft(text)
         
     async def update_from_stdout(self, output) -> None:
         """Take stdout and write it to the RichLog."""
