@@ -5,7 +5,7 @@ from textual.containers import Grid, Container
 from textual.widgets import Header, Footer
 
 from textual_shell.app import BaseShellApp
-from textual_shell.commands import Clear, Help, Set, Jobs
+from textual_shell.commands import Clear, Bash, Help, Jobs, Set
 from textual_shell.widgets import (
     Shell,
     CommandList,
@@ -33,7 +33,7 @@ class BasicShell(BaseShellApp):
     CONFIG_PATH = os.path.join(os.getcwd(), '.config.yaml')
     HISTORY_LOG = os.path.join(os.environ.get('HOME', os.getcwd()), '.shell_history.log')
     
-    cmd_list = [Clear(), Help(), Set(CONFIG_PATH), Jobs(), Sleep(), Timer()]
+    cmd_list = [Bash(), Clear(), Help(), Set(CONFIG_PATH), Jobs(), Sleep(), Timer()]
     command_names = [cmd.name for cmd in cmd_list]
     
     def compose(self) -> ComposeResult:
