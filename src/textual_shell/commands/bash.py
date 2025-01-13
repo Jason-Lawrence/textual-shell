@@ -3,7 +3,7 @@ import os
 from collections import deque
 from typing import Annotated
 
-from textual import log
+from textual import log, events
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.message import Message
@@ -29,13 +29,21 @@ class BashTextArea(TextArea):
         Binding('ctrl+c', 'clear', 'Interrupt the current command line.'),
         Binding('up', 'up_history', 'Cycle up through the history.', show=False),
         Binding('down', 'down_history', 'Cycle down through the history', show=False),
-        Binding('backspace', 'delete', 'delete the character unless its the prompt.', show=False)
     ]
     
     language='bash'
     history_list: reactive[deque[str]] = reactive(deque)
     current_history_index = None
+    prompt = reactive(str)
+    multiline = False
         
+    def watch_prompt(self, prompt) -> None:
+        """"""
+        self.limit = len(self.prompt)
+        self.clear()
+        self.text = self.prompt
+        self.action_cursor_line_end()
+    
     def action_enter_pressed(self):
         """
         Handler for the enter key.
@@ -45,16 +53,24 @@ class BashTextArea(TextArea):
         text = self.text
         if text.endswith('\\'):
             self.insert('\n> ')
+            self.limit = len(self.text)
+            self.multiline = True
             return
         
         else:
+            text = text[len(self.prompt):]
+            log(f'Command: {text}')
             self.post_message(self.Execute(text))
         
-        self.clear()
-        self.action_cursor_line_start()
+        self.current_history_index = None
+        self.action_clear()
+        self.action_cursor_line_end()
+        self.limit = len(self.prompt)
+        self.multiline = False
         
     def action_clear(self):
-        self.clear()
+        self.text = self.prompt
+        self.action_cursor_line_end()
         
     def action_up_history(self):
         """When the up arrow is hit cycle upwards through the history."""
@@ -71,8 +87,16 @@ class BashTextArea(TextArea):
             self.current_history_index += 1
         
         previous_cmd = self.history_list[self.current_history_index]
-        self.text = previous_cmd
-        self.action_cursor_line_end()
+        
+        if self.multiline:
+            text = self.text
+            self.clear()
+            self.insert(text[:self.limit])
+            self.insert(previous_cmd)
+            
+        else:
+            self.text = self.prompt + previous_cmd
+            self.action_cursor_line_end()
         
     def action_down_history(self):
         """When the down arrow key is pressed cycle downwards through the history."""
@@ -81,7 +105,7 @@ class BashTextArea(TextArea):
         
         if self.current_history_index == 0:
             self.current_history_index = None
-            self.clear()
+            self.action_clear()
             return
         
         elif self.current_history_index is None:
@@ -89,8 +113,14 @@ class BashTextArea(TextArea):
         
         self.current_history_index -= 1
         previous_cmd = self.history_list[self.current_history_index]
-        self.text = previous_cmd
+        self.text = self.prompt + previous_cmd
         self.action_cursor_line_end()
+        
+    def _on_key(self, event: events.Key) -> None:
+        if event.character == '\x7f':
+            if len(self.text) == self.limit:
+                event.prevent_default()
+                event.stop()
 
 
 class BashShell(Screen):
@@ -123,24 +153,29 @@ class BashShell(Screen):
     
     user = reactive(str)
     current_dir = reactive(str)
-    
+    prompt = reactive(str)
     
     def __init__(self, task: asyncio.Task, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.shell_task = task
-        self.user = os.environ.get('USER', 'user')
-        self.current_dir = os.getcwd()
-        
         self.run_worker(self.setup())
         
     def compose(self) -> ComposeResult:
         yield RichLog(markup=True)
         yield BashTextArea()
+    
+    def on_mount(self) -> None:
+        self.user = os.environ.get('USER', 'user')
+        self.current_dir = os.getcwd()
+        self.create_prompt()
+        
+        text_area = self.query_one(BashTextArea)
+        text_area.focus()
         
     def create_prompt(self) -> None:
-        user_sec = f'[bright_green]{self.user}[/bright_green]'
-        c_dir_sec = f'[dodger_blue2]{self.current_dir}[/dodger_blue2]'
-        self.prompt = f'{user_sec}:{c_dir_sec}$ '
+        # user_sec = f'[bright_green]{self.user}[/bright_green]'
+        # c_dir_sec = f'[dodger_blue2]{self.current_dir}[/dodger_blue2]'
+        self.prompt = f'{self.user}:{self.current_dir}$ '
         
     def action_background_job(self) -> None:
         """Background the bash shell and 
@@ -230,6 +265,12 @@ class BashShell(Screen):
         
     def watch_current_dir(self) -> None:
         self.create_prompt()
+        
+    def watch_prompt(self) -> None:
+        """Whenever the prompt changes update the text area."""
+        textarea = self.query_one(BashTextArea)
+        textarea.prompt = self.prompt
+        
 
 class RunBashShell(Job):
     
