@@ -31,7 +31,6 @@ class BashTextArea(TextArea):
         Binding('down', 'down_history', 'Cycle down through the history', show=False),
     ]
     
-    language='bash'
     history_list: reactive[deque[str]] = reactive(deque)
     current_history_index = None
     prompt = reactive(str)
@@ -120,8 +119,16 @@ class BashTextArea(TextArea):
                 self.cursor_location[1] == len(self.prompt)):
                     event.prevent_default()
                     event.stop()
-
-
+    
+    def _on_mouse_down(self, event: events.MouseDown):
+        event.stop()
+        event.prevent_default()
+    
+    def _on_mouse_up(self, event: events.MouseUp):
+        event.stop()
+        event.prevent_default()
+    
+    
 class BashShell(Screen):
     """"""
     
@@ -192,8 +199,6 @@ class BashShell(Screen):
         
     async def setup(self):
         """"""
-        log('Setting up shell')
-        
         self.BASH_SHELL = await asyncio.create_subprocess_exec(
             'bash',
             stdin=asyncio.subprocess.PIPE,
@@ -211,8 +216,6 @@ class BashShell(Screen):
         )
         
         self.tasks = [stdout_task, stderr_task]
-        
-        log('Finished setting up the shell.')
         
     async def on_bash_text_area_execute(
         self,
@@ -280,7 +283,7 @@ class RunBashShell(Job):
     
     async def execute(self):
         self.running()
-        log(f'Executing: {self.id}')
+        
         self.screen = BashShell(self.task)
         self.shell.app.install_screen(self.screen, name=self.id)
         self.shell.app.push_screen(self.screen)
