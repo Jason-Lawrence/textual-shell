@@ -14,7 +14,6 @@ readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "textual>=1.0.0",
-    "textual[syntax]",
     "pyyaml>=6.0.2",
 ]
 classifiers = [
