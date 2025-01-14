@@ -2,6 +2,11 @@
 
 The below commands are available to use with in the shell.
 
+## BASH
+A command that spawns a simple bash shell. Milage may vary.
+
+[BASH Reference](bash.md){ .md-button .md-button--primary }
+
 ## CLEAR
 A basic command for clearing the console and history logs.
 
