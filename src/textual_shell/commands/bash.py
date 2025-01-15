@@ -10,16 +10,26 @@ from textual.message import Message
 from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import RichLog, TextArea
+from textual.widgets.text_area import Location
+
 
 from ..command import Command, CommandNode
 from ..job import Job
 
 class BashTextArea(TextArea):
-    """"""
+    """Custom TextArea to somewhat replicate a Bash shell interface."""
     
     class Execute(Message):
-        """"""
-        def __init__(self, text) -> None:
+        """
+        Execute the command that was typed in the text area.
+        
+        Args:
+            text (str): The command in the text area
+        """
+        def __init__(
+            self,
+            text: Annotated[str, 'The command in the text area.']
+        ) -> None:
             super().__init__()
             self.text = text
         
@@ -40,7 +50,7 @@ class BashTextArea(TextArea):
         self.action_cursor_line_end()
 
     def watch_prompt(self, prompt) -> None:
-        """"""
+        """Switch to the new prompt."""
         self.clear()
         self.insert(self.prompt)
     
@@ -66,6 +76,7 @@ class BashTextArea(TextArea):
         self.multiline = False
         
     def action_clear(self):
+        """WHen ctrl+c is hit clear the text area."""
         self.text = self.prompt
         self.action_cursor_line_end()
         
@@ -112,25 +123,119 @@ class BashTextArea(TextArea):
         previous_cmd = self.history_list[self.current_history_index]
         self.text = self.prompt + previous_cmd
         self.action_cursor_line_end()
+    
+    def check_cursor_location(self, location: Location) -> bool:
+        """Return true if the location violates the prompt."""
+        if self.multiline:
+            return location[1] <= 2
+
+        else:
+            return location[1] <= len(self.prompt)
         
-    def _on_key(self, event: events.Key) -> None:
-        if event.character == '\x7f' or event.key == 'left':
-            if (self.cursor_location[1] == 2 or 
-                self.cursor_location[1] == len(self.prompt)):
-                    event.prevent_default()
-                    event.stop()
+    def action_cursor_left(self, select = False):
+        if self.check_cursor_location(self.cursor_location):
+            return None
+        else:
+            return super().action_cursor_left(select)
+        
+    def action_cursor_line_start(self, select = False):
+        """"""
+        location = self.cursor_location
+        if self.multiline:
+            self.cursor_location = (location[0], 2)
+            
+        else:
+            self.cursor_location = (location[0], len(self.prompt))
+                
+    def action_cursor_word_left(self, select=False):
+        """Override to prevent moving cursor to prompt."""
+        if self.check_cursor_location(self.cursor_location):
+            return 
+        else:
+            return super().action_cursor_word_left(select)
+    
+    def action_delete_left(self):
+        if self.check_cursor_location(self.cursor_location):
+            return
+        else:
+            return super().action_delete_left()
+    
+    def action_delete_word_left(self):
+        """"""
+        if self.check_cursor_location(self.cursor_location):
+            return
+        
+        else:
+            return super().action_delete_word_left()
+        
+    def action_delete_to_start_of_line(self):
+        """Delete up to the prompt"""
+        if self.multiline:
+            index = self.text.rfind('\\\n> ') + 4
+            text = self.text[:index]
+            self.clear()
+            self.insert(text)
+            
+        else:
+            self.text = self.prompt
+            self.action_cursor_line_end()
+            
+    def action_cut(self):
+        """Basically ctrl+u. Figure out how to do selections."""
+        if self.multiline:
+            index = self.text.rfind('\\\n> ') + 4
+            text = self.text[:index]
+            self.clear()
+            self.insert(text)
+            
+        else:
+            self.text = self.prompt
+            self.action_cursor_line_end()
+            
+    def action_cursor_up(self, select) -> None:
+        """Override to prevent this behavior."""
+        return
+    
+    def action_cursor_down(self, select = False):
+        return
+        
+    def action_cursor_page_down(self):
+        """Override to prevent this behavior."""
+        return 
+    
+    def action_cursor_page_up(self):
+        """Override to prevent this behavior."""
+        return
+            
+    def action_select_line(self):
+        return
+        
+    def action_select_all(self):
+        return
     
     def _on_mouse_down(self, event: events.MouseDown):
+        """Prevent all mouse events"""
         event.stop()
         event.prevent_default()
-    
+        
+    def _on_mouse_move(self, event: events.MouseMove):
+        """Prevent all mouse events"""
+        event.stop()
+        event.prevent_default()
+        
     def _on_mouse_up(self, event: events.MouseUp):
+        """Prevent all mouse events"""
         event.stop()
         event.prevent_default()
     
     
 class BashShell(Screen):
-    """"""
+    """
+    Screen to render the Bash shell
+    
+    Args:
+        task (asycnio.Task): The asyncio task of the job the shell is running in.
+    """
     
     BINDINGS = [
         Binding('ctrl+z', 'background_job', 'Background the job.', priority=True),
@@ -161,7 +266,11 @@ class BashShell(Screen):
     current_dir = reactive(str)
     prompt = reactive(str)
     
-    def __init__(self, task: asyncio.Task, *args, **kwargs) -> None:
+    def __init__(
+        self,
+        task: Annotated[asyncio.Task, 'The asyncio task of the job the shell is running in.'],
+        *args, **kwargs
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.shell_task = task
         self.run_worker(self.setup())
@@ -198,7 +307,8 @@ class BashShell(Screen):
         self.app.pop_screen()
         
     async def setup(self):
-        """"""
+        """Spawn the child process to run the bash shell.
+        Also create the tasks for reading stdout and stderr."""
         self.BASH_SHELL = await asyncio.create_subprocess_exec(
             'bash',
             stdin=asyncio.subprocess.PIPE,
@@ -217,11 +327,56 @@ class BashShell(Screen):
         
         self.tasks = [stdout_task, stderr_task]
         
+    def handle_cd(self, cmd: str) -> None:
+        """
+        update the current directory for the prompt.
+        Check to see if it was a compound command. If so
+        then split it and check to see if each command was cd.
+        recursively call this command to handle each cd command. 
+        
+        Args:
+            cmd (str): The command that was entered.
+        """
+        if cmd.count(' && ') > 0:
+            cmds = cmd.split(' && ')
+            for cmd in cmds:
+                if cmd.startswith('cd'):
+                    self.handle_cd(cmd)
+        
+        else:
+            cmd = cmd.strip()
+            if len(cmd) == 2 and cmd == 'cd':
+                self.current_dir = os.environ.get('HOME')
+            
+            elif cmd.startswith('cd '):
+                path = cmd[3:].strip()
+                
+                if path.startswith('$'):
+                    path = os.environ.get(path[1:], None)
+                    if path is None:
+                        return
+                    
+                new_dir = os.path.abspath(os.path.join(self.current_dir, path))
+                
+                if os.path.isdir(new_dir):
+                    self.current_dir = new_dir
+                    
+            else:
+                return
+            
+        
     async def on_bash_text_area_execute(
         self,
         event: BashTextArea.Execute
     ) -> None:
-        """"""
+        """
+        Execute the command by piping it into stdin of the bash shell.
+        The clear command is not piped into the bash shell as it screws with
+        output. Only the RichLog needs to be cleared anyway.
+        
+        Args:
+            event (BashTextArea.Execute): The message with the command.
+        """
         rich_log = self.query_one(RichLog)
         text_area = self.query_one(BashTextArea)
         
@@ -238,6 +393,9 @@ class BashShell(Screen):
         await self.BASH_SHELL.stdin.drain()
           
         rich_log.write(self.prompt + event.text)
+        
+        if text.count('cd') > 0:
+            self.handle_cd(text)
 
     async def update_from_stdout(self, output) -> None:
         """Take stdout and write it to the RichLog."""
@@ -250,6 +408,7 @@ class BashShell(Screen):
         rich_log.write(error)
         
     async def read_stdout(self):
+        """Coroutine for reading stdout and updating the RichLog."""
         try:
             async for line in self.BASH_SHELL.stdout:
                 decoded = line.decode().strip()
@@ -259,6 +418,7 @@ class BashShell(Screen):
             return
             
     async def read_stderr(self):
+        """Coroutine for reading stderr and updating the RichLog."""
         try:
             async for line in self.BASH_SHELL.stderr:
                 decoded = line.decode().strip()
@@ -268,9 +428,11 @@ class BashShell(Screen):
             return
         
     def watch_user(self) -> None:
+        """When the user changes update the prompt."""
         self.create_prompt()
         
     def watch_current_dir(self) -> None:
+        """When the working directory changes update the prompt."""
         self.create_prompt()
         
     def watch_prompt(self) -> None:
@@ -280,8 +442,11 @@ class BashShell(Screen):
         
 
 class RunBashShell(Job):
+    """Job for managing and executing a bash shell."""
     
     async def execute(self):
+        """Create and install the screen for the bash shell.
+        Wait for the user to kill the shell."""
         self.running()
         
         self.screen = BashShell(self.task)
@@ -295,6 +460,7 @@ class RunBashShell(Job):
 
 
 class Bash(Command):
+    """Command for executing a bash shell."""
     
     DEFINITION = {
         'bash': CommandNode(
