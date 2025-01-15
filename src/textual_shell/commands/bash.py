@@ -161,7 +161,7 @@ class BashTextArea(TextArea):
             return super().action_delete_left()
     
     def action_delete_word_left(self):
-        """"""
+        """Override to prevent deleting part of the prompt."""
         if self.check_cursor_location(self.cursor_location):
             return
         
@@ -197,6 +197,7 @@ class BashTextArea(TextArea):
         return
     
     def action_cursor_down(self, select = False):
+        """OVerride to prevent this behavior."""
         return
         
     def action_cursor_page_down(self):
@@ -208,9 +209,11 @@ class BashTextArea(TextArea):
         return
             
     def action_select_line(self):
+        """Override to prevent this behavior."""
         return
         
     def action_select_all(self):
+        """Override to prevent this behavior."""
         return
     
     def _on_mouse_down(self, event: events.MouseDown):
@@ -236,6 +239,11 @@ class BashShell(Screen):
     Args:
         task (asycnio.Task): The asyncio task of the job the shell is running in.
     """
+    INCOMPATIBLE_COMMANDS: tuple[str] = (
+        'more',
+        'vim',
+        'vi'
+    )
     
     BINDINGS = [
         Binding('ctrl+z', 'background_job', 'Background the job.', priority=True),
@@ -288,8 +296,8 @@ class BashShell(Screen):
         text_area.focus()
         
     def create_prompt(self) -> None:
-        # user_sec = f'[bright_green]{self.user}[/bright_green]'
-        # c_dir_sec = f'[dodger_blue2]{self.current_dir}[/dodger_blue2]'
+        """Take the current user and current directory 
+        and make a prompt for the shell"""
         self.prompt = f'{self.user}:{self.current_dir}$ '
         
     def action_background_job(self) -> None:
@@ -395,6 +403,22 @@ class BashShell(Screen):
             rich_log.clear()
             return
         
+        elif text == 'exit':
+            self.action_kill_shell()
+        
+        elif text.count(' && ') > 0:
+            cmds = text.split(' && ')
+            for cmd in cmds:
+                if cmd.startswith(self.INCOMPATIBLE_COMMANDS):
+                    rich_log.write(self.prompt + event.text)
+                    await self.update_from_stderr(f'COMMAND: {cmd} is not compatible')
+                    return
+                
+        elif text.startswith(self.INCOMPATIBLE_COMMANDS):
+            rich_log.write(self.prompt + event.text)
+            await self.update_from_stderr(f'COMMAND: {text} is not compatible')
+            return
+            
         self.BASH_SHELL.stdin.write(text.encode() + b'\n')
         await self.BASH_SHELL.stdin.drain()
           
