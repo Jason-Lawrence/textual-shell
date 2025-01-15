@@ -364,6 +364,12 @@ class BashShell(Screen):
             else:
                 return
             
+    def handle_su(self) -> None:
+        """Handle switching users. 
+        Check to see if the user ENV variable has changed."""
+        new_user = os.environ.get('USER')
+        if new_user != self.user:
+            self.user = new_user
         
     async def on_bash_text_area_execute(
         self,
@@ -396,6 +402,9 @@ class BashShell(Screen):
         
         if text.count('cd') > 0:
             self.handle_cd(text)
+            
+        if text.count('su') > 0:
+            self.handle_su()
 
     async def update_from_stdout(self, output) -> None:
         """Take stdout and write it to the RichLog."""
