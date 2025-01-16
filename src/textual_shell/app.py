@@ -33,7 +33,8 @@ class BaseShellApp(App):
         """
         
     def _get_job_manager(self) -> JobManager:
-        """Search through all of the screens to find the one with the Job Manager widget."""
+        """Search through all of the screens to find
+        the one with the Job Manager widget."""
         for screen in self.app.screen_stack:
             try: 
                 return screen.query_one(JobManager)
@@ -42,7 +43,8 @@ class BaseShellApp(App):
                 pass
     
     def _get_shell(self) -> BaseShell:
-        """Search through all of the screens to find the one with the Shell widget."""
+        """Search through all of the screens to find
+        the one with the Shell widget."""
         for screen in self.app.screen_stack:
             try:
                 return screen.query_one(BaseShell)
@@ -50,6 +52,16 @@ class BaseShellApp(App):
             except NoMatches as e:
                 pass
             
+    def _get_console_log(self) -> ConsoleLog:
+        """Search through all of the screens to find
+        the one with the ConsoleLog widget"""
+        for screen in self.app.screen_stack:
+            try: 
+                return screen.query_one(ConsoleLog)
+            
+            except NoMatches as e:
+                pass     
+    
     def on_set_job_settings_changed(self, event: SetJob.SettingsChanged) -> None:
         """
         Catch messages for when a setting has been changed.
@@ -87,7 +99,7 @@ class BaseShellApp(App):
         """
         event.stop()
         try:
-            console_log = self.query_one(ConsoleLog)
+            console_log = self._get_console_log()
             rich_log = console_log.query_one(RichLog)
             log_entry = console_log.gen_record(event)
             if log_entry:
@@ -103,7 +115,7 @@ class BaseShellApp(App):
         """
         event.stop()
         try:
-            console_log = self.query_one(ConsoleLog)
+            console_log = self._get_console_log()
             rich_log = console_log.query_one(RichLog)
             log_entry = console_log.gen_record(event)
             if log_entry:
