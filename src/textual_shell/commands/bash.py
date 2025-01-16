@@ -32,6 +32,20 @@ class BashTextArea(TextArea):
         ) -> None:
             super().__init__()
             self.text = text
+            
+            
+    class ShowSuggestions(Message):
+        """
+        Send suggestions to be written to the rich log.
+        
+        Args:
+            cmd (str): The current command line.
+            suggestions (list[str]): Suggestions for auto complete.
+        """
+        def __init__(self, cmd: str, suggestions: list[str]):
+            super().__init__()
+            self.cmd = cmd
+            self.suggestions = suggestions
         
     
     BINDINGS = [
@@ -39,11 +53,23 @@ class BashTextArea(TextArea):
         Binding('ctrl+c', 'clear', 'Interrupt the current command line.'),
         Binding('up', 'up_history', 'Cycle up through the history.', show=False),
         Binding('down', 'down_history', 'Cycle down through the history', show=False),
+        Binding('tab', 'autocomplete', 'Auto complete the path.', show=False)
     ]
+    
+    COMPLETION_COMMANDS: tuple[str] = (
+        './',
+        '../',
+        'cd',
+        'ls',
+        'mkdir',
+        'rm',
+        'touch',
+    )
     
     history_list: reactive[deque[str]] = reactive(deque)
     current_history_index = None
     prompt = reactive(str)
+    shell_working_directory = os.getcwd()
     multiline = False
 
     def on_mount(self):
@@ -53,7 +79,125 @@ class BashTextArea(TextArea):
         """Switch to the new prompt."""
         self.clear()
         self.insert(self.prompt)
-    
+        self.shell_working_directory = self.prompt.split(':')[-1][:-2]
+        
+    def send_suggestions(self, suggestions: list[str]) -> None:
+        """
+        Send the message for showing suggestions.
+        
+        Args:
+            suggestions (list[str]): The suggestions.
+        """
+        self.post_message(
+            self.ShowSuggestions(
+                cmd=self.text[len(self.prompt):],
+                suggestions=suggestions
+            )
+        )
+        
+    def match_options(
+        self,
+        options: list[str],
+        pattern: str
+    ) -> list[str]:
+        """
+        Match options to the pattern.
+        
+        Args:
+            options (list[str]): The suggestions.
+            pattern (str): The pattern to match against.
+        
+        Returns:
+            suggestions (list[str]): The suggestions that 
+                started with the pattern.
+        """
+        return [option for option in options if option.startswith(pattern)]
+                
+    def action_autocomplete(self):
+        """On TAB try an auto complete the path or show 
+        suggestions for auto completions."""
+        if self.text.count(' && ') > 0:
+            cmd = self.text.split(' && ')[-1]
+        
+        else:
+            cmd = self.text[len(self.prompt):]
+         
+        if cmd.startswith(self.COMPLETION_COMMANDS):
+            try:
+                path = cmd.split(' ')[-1]
+                if path == '':
+                    suggestions = os.listdir(self.shell_working_directory)
+                    self.send_suggestions(suggestions)
+                    
+                elif path == '.':
+                    suggestions = ['./', '../']
+                    others = os.listdir(self.shell_working_directory)
+                    suggestions.extend(self.match_options(others, path))
+                    self.send_suggestions(suggestions)
+                    
+                elif path == '..':
+                    self.insert('/')
+                
+                else:
+                    index = path.rfind('/')
+                    if index < 0:
+                        options = os.listdir(self.shell_working_directory)
+                        suggestions = self.match_options(options, path)
+                        
+                        if len(suggestions) == 0: 
+                            return
+                        
+                        elif len(suggestions) == 1:
+                            suggestion = suggestions.pop()
+                            self.insert(suggestion[len(path):])
+                            return
+                        
+                        else:
+                            self.send_suggestions(suggestions)
+                    
+                    elif index == 0:
+                        options = os.listdir('/')
+                        if len(path) == 1:
+                            self.send_suggestions(options)
+                            return
+                        
+                        suggestions = self.match_options(options, path[1:])
+                        if len(suggestions) == 0:
+                            return
+                        
+                        elif len(suggestions) == 1:
+                            suggestion = suggestions.pop()
+                            self.insert(suggestion[len(path[1:]):])
+                        
+                        else:
+                            self.send_suggestions(suggestions)
+                        
+                    else:
+                        path_to_list = path[:index]
+                        options = os.listdir(f'{self.shell_working_directory}/{path_to_list}')
+                        path_to_match = path[index:]
+                        log(f'MATCH: {path_to_match}')
+                        
+                        if path_to_match == '/':
+                            suggestions = options
+                            
+                        else:
+                            suggestions = self.match_options(options, path_to_match[1:])
+                            
+                        log(f'SUGGESTIONS: {suggestions}')
+                        
+                        if len(suggestions) == 0:
+                            return
+                        
+                        elif len(suggestions) == 1:
+                            suggestion = suggestions.pop()
+                            self.insert(suggestion[len(path_to_match[1:]):])
+                        
+                        else:
+                            self.send_suggestions(suggestions)
+            except:
+                pass
+            
     def action_enter_pressed(self):
         """
         Handler for the enter key.
@@ -284,7 +428,7 @@ class BashShell(Screen):
         self.run_worker(self.setup())
         
     def compose(self) -> ComposeResult:
-        yield RichLog(markup=True)
+        yield RichLog(markup=True, wrap=True)
         yield BashTextArea()
     
     def on_mount(self) -> None:
@@ -429,6 +573,20 @@ class BashShell(Screen):
             
         if text.count('su') > 0:
             self.handle_su()
+            
+    def on_bash_text_area_show_suggestions(
+        self,
+        event: BashTextArea.ShowSuggestions) -> None:
+        """
+        Show available suggestions for tab completions
+        
+        Args:
+            event (BashTextArea.ShowSuggestions):
+                The event for showing suggestions.
+        """
+        rich_log = self.query_one(RichLog)
+        rich_log.write(self.prompt + event.cmd)
+        rich_log.write('\t'.join(event.suggestions))
 
     async def update_from_stdout(self, output) -> None:
         """Take stdout and write it to the RichLog."""
