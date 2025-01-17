@@ -63,13 +63,15 @@ class SetJob(Job):
         options = configure.get_setting_options(
             self.section, self.setting, self.config
         )
-            
-        if self.value is not None and self.value not in options:
-            self.send_log(
-                f'Invalid value: {self.value} for {self.section}.{self.setting}',
-                logging.ERROR
-            )
-            return
+
+        if options is not None:
+
+            if self.value is not None and self.value not in options:
+                self.send_log(
+                    f'Invalid value: {self.value} for {self.section}.{self.setting}',
+                    logging.ERROR
+                )
+                return
         
         self.send_log(
             f'Updating setting: {self.section}.{self.setting}',
