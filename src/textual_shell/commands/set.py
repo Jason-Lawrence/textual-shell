@@ -43,16 +43,16 @@ class SetJob(Job):
     
     def __init__(
         self,
-        section: Annotated[str, 'Section name'],
-        setting: Annotated[str, 'Setting name'],
+        section_name: Annotated[str, 'Section name'],
+        setting_name: Annotated[str, 'Setting name'],
         value: Annotated[str, 'value for the setting'],
         config: Annotated[str, 'Path to the config.'],
         *args, **kwargs
     ) -> None:
         super().__init__(*args, **kwargs)
         self.config = config
-        self.section = section
-        self.setting = setting
+        self.section = section_name
+        self.setting = setting_name
         self.value = value
     
     async def execute(self) -> None:
@@ -60,9 +60,26 @@ class SetJob(Job):
         Update the setting in the config.
         """
         self.running()
-        options = configure.get_setting_options(
-            self.section, self.setting, self.config
-        )
+        try:
+            options = configure.get_setting_options(
+                self.section, self.setting, self.config
+            )
+
+        except configure.MissingSection as e:
+            self.send_log(
+                e,
+                logging.ERROR
+            )
+            self.error()
+            return
+
+        except configure.MissingSetting as e:
+            self.send_log(
+                e,
+                logging.ERROR
+            )
+            self.error()
+            return
 
         if options is not None:
 
@@ -154,6 +171,14 @@ class Set(Command):
         Returns:
             set_job (SetJob): The job to handle the execution.
         """
+        if len(args) != 3:
+            self.shell.notify(
+                message='Invalid Arguments',
+                title='Command: set',
+                severity='error'
+            )
+            return
+
         return SetJob(
             *args,
             config=self.config_path,
