@@ -82,7 +82,7 @@ class ConsoleLog(Widget):
     
     def compose(self) -> ComposeResult:
         yield Container(
-            Label('Command Log'),
+            Label('Console Log'),
             RichLog(markup=True)
         )
         
