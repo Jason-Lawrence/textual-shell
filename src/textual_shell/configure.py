@@ -4,6 +4,16 @@ from typing import Annotated
 import yaml
 
 
+class MissingSection(Exception):
+    """Custom Exception for when a section is not found."""
+    pass
+
+
+class MissingSetting(Exception):
+    """Custom Exception for when a setting is not found."""
+    pass
+
+
 def create_config(
     path: Annotated[str, 'The path to create the config file.'],
     config: Annotated[dict[str, str], 'Settings']={}
@@ -91,26 +101,61 @@ def get_setting_options(
             be displayed and the value will be the actual value.
     """
     setting = get_setting(section, setting, path)
+    
     return setting.get('options', None)
 
+
+def get_section(
+    section_name: Annotated[str, 'The section of the config.'],
+    path: Annotated[str, 'The path to create the config file.']
+) -> Annotated[dict[str,dict], 'The section sub dictionary.']:
+    """
+    Get the section sub dictionary.
+
+    Args:
+        section_name (str): The section of the config.
+        path (str): The path to the config.
+
+    Raises:
+        MissingSection: Exception for missing section
+    """
+    config = get_config(path)
+    section = config.get(section_name, None)
+
+    if section is None:
+        raise MissingSection(f'Section: {section_name} does not exists!')
+
+    return section 
+
+
 def get_setting(
-    section: Annotated[str, 'The section of the config.'],
-    setting: Annotated[str, 'The setting to get.'],
+    section_name: Annotated[str, 'The section of the config.'],
+    setting_name: Annotated[str, 'The setting to get.'],
     path: Annotated[str, 'The path to create the config file.']
 ) -> Annotated[str | None, 'The setting sub dictionary.']:
     """
     Get the setting sub dictionary.
     
     Args:
-        section (str): The section of the config.
-        setting (str): The setting to retrieve the value for.
+        section_name (str): The section of the config.
+        setting_name (str): The setting to retrieve the value for.
         path (str): The path to the config.
         
     Returns:
         setting (dict): The description and value of a setting.
+
+    Raises:
+        MissingSetting: Exception for missing setting.
     """
-    config = get_config(path)
-    return config.get(section, {}).get(setting, None)
+    section = get_section(section_name, path)
+    setting = section.get(setting_name, None)
+
+    if setting is None:
+        raise MissingSetting(
+            f'Setting: {section_name}.{setting_name} does not exist!'
+        )
+    
+    return setting
 
 def check_section(
     section: Annotated[str, 'The name of the section.'],
