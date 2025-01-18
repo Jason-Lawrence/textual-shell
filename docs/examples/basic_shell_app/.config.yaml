@@ -9,3 +9,20 @@ Logging:
       WARNING: 30
     value: INFO
   description: The config for logging.
+  logdir:
+    description: The directory to write logs too.
+    value: /var/log
+MySQL:
+  description: The config for connecting to a server.
+  host:
+    description: The server's ip.
+    value: 127.0.0.1
+  password:
+    description: The password for the user.
+    value: password
+  port:
+    description: The port of the server.
+    value: 8000
+  user:
+    description: The user to login as.
+    value: root

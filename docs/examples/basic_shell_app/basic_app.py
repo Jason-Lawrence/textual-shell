@@ -31,9 +31,8 @@ class BasicShell(BaseShellApp):
     theme = 'tokyo-night'
 
     CONFIG_PATH = os.path.join(os.getcwd(), '.config.yaml')
-    HISTORY_LOG = os.path.join(os.environ.get('HOME', os.getcwd()), '.shell_history.log')
     
-    cmd_list = [Bash(), Clear(), Help(), Set(CONFIG_PATH), Jobs(), Sleep(), Timer()]
+    cmd_list = [Bash(), Clear(), Help(), Set(CONFIG_PATH), Jobs()]
     command_names = [cmd.name for cmd in cmd_list]
     
     def compose(self) -> ComposeResult:
@@ -43,7 +42,7 @@ class BasicShell(BaseShellApp):
             CommandList(self.command_names),
             Shell(
                 self.cmd_list,
-                prompt='xbsr <$ '
+                prompt='prompt <$ '
             ),
             SettingsDisplay(self.CONFIG_PATH),
             Container(),

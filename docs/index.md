@@ -2,6 +2,8 @@
 
 Welcome to the Textual-Shell documentation! This is an addon for the Textual framework.
 
+![Basic_Shell_App](assets/basic_shell_app.png)
+
 ### What is Textual-Shell?
 
 It is a collection of widgets that can be used to build a custom shell application. It draws inspiration from the cmd2 and prompt-toolkit libraries. 
