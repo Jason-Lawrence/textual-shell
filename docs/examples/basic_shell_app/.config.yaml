@@ -7,5 +7,5 @@ Logging:
       ERROR: 40
       INFO: 20
       WARNING: 30
-    value: DEBUG
+    value: INFO
   description: The config for logging.
