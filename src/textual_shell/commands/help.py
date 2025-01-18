@@ -86,7 +86,7 @@ class Help(Command):
     """
     DEFINITION = {
         'help': CommandNode(
-            name='set',
+            name='help',
             description='Show the help dialog for the requested command.'
         )
     }
