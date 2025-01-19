@@ -32,7 +32,7 @@ class BasicShell(BaseShellApp):
 
     CONFIG_PATH = os.path.join(os.getcwd(), '.config.yaml')
     
-    cmd_list = [Bash(), Clear(), Help(), Set(CONFIG_PATH), Jobs()]
+    cmd_list = [Bash(), Clear(), Help(), Set(CONFIG_PATH), Jobs(), Timer(), Sleep()]
     command_names = [cmd.name for cmd in cmd_list]
     
     def compose(self) -> ComposeResult:

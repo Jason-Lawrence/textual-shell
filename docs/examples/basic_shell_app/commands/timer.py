@@ -78,7 +78,8 @@ class TimerScreen(Screen):
         ("d", "toggle_dark", "Toggle dark mode"),
         ("a", "add_stopwatch", "Add"),
         ("r", "remove_stopwatch", "Remove"),
-        ("c", "close", "Close")
+        ("ctrl+z", "background", "Background the timer"),
+        ("ctrl+d", "kill_timer", "Kill the timer")
     ]
     
     DEFAULT_CSS = """
@@ -134,6 +135,13 @@ class TimerScreen(Screen):
             visibility: hidden
         }
     """
+    def __init__(
+        self,
+        task: asyncio.Task,
+        *args, **kwargs
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        self.timer_task = task
     
     def compose(self) -> ComposeResult:
         """Called to add widgets to the app."""
@@ -159,8 +167,15 @@ class TimerScreen(Screen):
             "textual-dark" if self.theme == "textual-light" else "textual-light"
         )
         
-    def action_close(self) -> None:
-        """"""
+    def action_background(self) -> None:
+        """An action to background the timer screen
+        and return to the shell app."""
+        self.app.pop_screen()
+
+    def action_kill_timer(self) -> None:
+        """An action to kill the timer and
+        return to the shell app."""
+        self.timer_task.cancel()
         self.app.pop_screen()
         
 
@@ -168,7 +183,9 @@ class TimerJob(Job):
     
     async def execute(self):
         self.running()
+        self.screen = TimerScreen(self.task)
         self.shell.app.install_screen(self.screen, name=self.id)
+        self.shell.app.push_screen(self.screen)
         
         await self.wait_for_cancel()
         
@@ -189,6 +206,5 @@ class Timer(Command):
         """Create a timer instance"""
         return TimerJob(
             shell=self.shell,
-            cmd=self.name,
-            screen=TimerScreen()
+            cmd=self.name
         )
