@@ -179,7 +179,8 @@ class TimerScreen(Screen):
         self.app.pop_screen()
         
 
-class TimerJob(Job):
+class TimerApp(Job):
+    """A job to run an instance of the timer app."""
     
     async def execute(self):
         self.running()
@@ -194,6 +195,7 @@ class TimerJob(Job):
 
 
 class Timer(Command):
+    """A command to create a timer."""
     
     DEFINITION = {
         'timer': CommandNode(
@@ -202,9 +204,22 @@ class Timer(Command):
         )
     }
         
-    def create_job(self, *args):
-        """Create a timer instance"""
-        return TimerJob(
+    def create_job(self, *args) -> TimerApp:
+        """
+        Create a timer instance
+        
+        Returns:
+            job (TimerApp): A job to run an instance of the timer app.
+        """
+        if len(args) != 0:
+            self.shell.notify(
+                message='Invalid Arguments',
+                title='Command: timer',
+                severity='error'
+            )
+            return
+
+        return TimerApp(
             shell=self.shell,
             cmd=self.name
         )
