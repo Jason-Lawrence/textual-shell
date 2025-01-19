@@ -1,7 +1,4 @@
-# Tutorial
-Lets start out with making a simple sleep command. And then look at something more advanced.
-
-## Sleep
+# Sleep Tutorial
 The sleep command will have one argument which will be how long to sleep for.
 
 ``` py title='sleep.py'
