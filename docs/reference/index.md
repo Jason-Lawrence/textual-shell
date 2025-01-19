@@ -8,7 +8,7 @@ Base textual app for all shell apps.
 
 
 ## textual_shell.command
-This is the base class for commands. To make your own extend this class. A guide is [here](../custom_commands.md)
+This is the base class for commands. To make your own extend this class. A guide is 
 
 [textual_shell.command Reference](command.md){ .md-button .md-button--primary }
 
