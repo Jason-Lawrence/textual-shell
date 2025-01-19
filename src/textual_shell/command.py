@@ -25,6 +25,8 @@ class CommandNode:
         value (Optional[str]): Optional value for the node
         options (Optional[list[str] | dict[str, str]]): 
             Optional values for the node.
+        children (Optional[dict[str, CommandNode]]): 
+            Optional dictionary of child nodes.
             
     """
     

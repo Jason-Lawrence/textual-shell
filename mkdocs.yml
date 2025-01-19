@@ -29,6 +29,14 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Guide:
+    - guide/index.md
+    - Design: guide/design.md
+    - Tutorial: 
+      - guide/tutorial/index.md
+      - Sleep: guide/tutorial/sleep.md
+      - Timer: guide/tutorial/timer.md
+
   - Widgets:
     - widgets/index.md
     - CommandList: widgets/command_list.md
@@ -50,8 +58,6 @@ nav:
     - JOBS: commands/jobs.md
     - SET: commands/set.md
 
-  - Implement Your Own: custom_commands.md
-
   - Reference:
     - reference/index.md
     - textual_shell.app: reference/app.md
@@ -59,3 +65,4 @@ nav:
     - textual_shell.configure: reference/configure.md
     - textual_shell.job: reference/job.md
 
+  - ROAD MAP: roadmap.md
