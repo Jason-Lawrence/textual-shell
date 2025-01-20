@@ -349,7 +349,7 @@ class BashShell(Screen):
         output. Only the RichLog needs to be cleared anyway.
         
         Args:
-            event (BashTextArea.Execute): The message with the command.
+            event (BashArea.Execute): The message with the command.
         """
         rich_log = self.query_one(RichLog)
         text_area = self.query_one(BashArea)
