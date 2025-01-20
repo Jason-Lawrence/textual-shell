@@ -48,6 +48,12 @@ The primary widget for this extension.
 [Shell Reference](shell/index.md){ .md-button .md-button--primary }
 
 
+## ShellArea
+Custom TextArea widget for mimicking shell-like behavior
+
+[ShellArea Reference](shell_area.md){ .md-button .md-button--primary }
+
+
 ## Suggestions
 The widget for showing auto-completion suggestions for the prompt. Is a sub component of the Shell widget.
 

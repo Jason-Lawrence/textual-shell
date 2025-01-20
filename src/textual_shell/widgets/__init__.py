@@ -9,7 +9,7 @@ from .shell import (
     Shell,
     Suggestions
 )
-
+from .shell_area import ShellArea
 
 __all__ = [
     'BaseShell',
@@ -21,4 +21,5 @@ __all__ = [
     'Shell',
     'Suggestions',
     'SettingsDisplay',
+    'ShellArea'
 ]
