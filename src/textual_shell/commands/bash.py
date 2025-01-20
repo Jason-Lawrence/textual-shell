@@ -1,38 +1,22 @@
 import asyncio
 import os
-from collections import deque
 from typing import Annotated
 
-from textual import log, events
+from textual import log
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.message import Message
 from textual.reactive import reactive
 from textual.screen import Screen
-from textual.widgets import RichLog, TextArea
-from textual.widgets.text_area import Location
+from textual.widgets import RichLog
 
 
 from ..command import Command, CommandNode
 from ..job import Job
+from ..widgets import ShellArea
 
-class BashTextArea(TextArea):
+class BashArea(ShellArea):
     """Custom TextArea to somewhat replicate a Bash shell interface."""
-    
-    class Execute(Message):
-        """
-        Execute the command that was typed in the text area.
-        
-        Args:
-            text (str): The command in the text area
-        """
-        def __init__(
-            self,
-            text: Annotated[str, 'The command in the text area.']
-        ) -> None:
-            super().__init__()
-            self.text = text
-            
             
     class ShowSuggestions(Message):
         """
@@ -49,10 +33,6 @@ class BashTextArea(TextArea):
         
     
     BINDINGS = [
-        Binding('enter', 'enter_pressed', 'execute command', priority=True),
-        Binding('ctrl+c', 'clear', 'Interrupt the current command line.'),
-        Binding('up', 'up_history', 'Cycle up through the history.', show=False),
-        Binding('down', 'down_history', 'Cycle down through the history', show=False),
         Binding('tab', 'autocomplete', 'Auto complete the path.', show=False)
     ]
     
@@ -66,19 +46,11 @@ class BashTextArea(TextArea):
         'touch',
     )
     
-    history_list: reactive[deque[str]] = reactive(deque)
-    current_history_index = None
-    prompt = reactive(str)
     shell_working_directory = os.getcwd()
-    multiline = False
-
-    def on_mount(self):
-        self.action_cursor_line_end()
 
     def watch_prompt(self, prompt) -> None:
         """Switch to the new prompt."""
-        self.clear()
-        self.insert(self.prompt)
+        super().watch_prompt(prompt)
         self.shell_working_directory = self.prompt.split(':')[-1][:-2]
         
     def send_suggestions(self, suggestions: list[str]) -> None:
@@ -218,163 +190,7 @@ class BashTextArea(TextArea):
         self.action_clear()
         self.action_cursor_line_end()
         self.multiline = False
-        
-    def action_clear(self):
-        """WHen ctrl+c is hit clear the text area."""
-        self.text = self.prompt
-        self.action_cursor_line_end()
-        
-    def action_up_history(self):
-        """When the up arrow is hit cycle upwards through the history."""
-        if len(self.history_list) == 0:
-            return
-        
-        if self.current_history_index is None:
-            self.current_history_index = 0
-        
-        elif self.current_history_index == len(self.history_list) - 1:
-            return
-        
-        else:
-            self.current_history_index += 1
-        
-        previous_cmd = self.history_list[self.current_history_index]
-        
-        if self.multiline:
-            text = self.text
-            self.clear()
-            self.insert(text[:self.limit])
-            self.insert(previous_cmd)
-            
-        else:
-            self.text = self.prompt + previous_cmd
-            self.action_cursor_line_end()
-        
-    def action_down_history(self):
-        """When the down arrow key is pressed cycle downwards through the history."""
-        if len(self.history_list) == 0:
-            return
-        
-        if self.current_history_index == 0:
-            self.current_history_index = None
-            self.action_clear()
-            return
-        
-        elif self.current_history_index is None:
-            return
-        
-        self.current_history_index -= 1
-        previous_cmd = self.history_list[self.current_history_index]
-        self.text = self.prompt + previous_cmd
-        self.action_cursor_line_end()
-    
-    def check_cursor_location(self, location: Location) -> bool:
-        """Return true if the location violates the prompt."""
-        if self.multiline:
-            return location[1] <= 2
 
-        else:
-            return location[1] <= len(self.prompt)
-        
-    def action_cursor_left(self, select = False):
-        if self.check_cursor_location(self.cursor_location):
-            return None
-        else:
-            return super().action_cursor_left(select)
-        
-    def action_cursor_line_start(self, select = False):
-        """"""
-        location = self.cursor_location
-        if self.multiline:
-            self.cursor_location = (location[0], 2)
-            
-        else:
-            self.cursor_location = (location[0], len(self.prompt))
-                
-    def action_cursor_word_left(self, select=False):
-        """Override to prevent moving cursor to prompt."""
-        if self.check_cursor_location(self.cursor_location):
-            return 
-        else:
-            return super().action_cursor_word_left(select)
-    
-    def action_delete_left(self):
-        if self.check_cursor_location(self.cursor_location):
-            return
-        else:
-            return super().action_delete_left()
-    
-    def action_delete_word_left(self):
-        """Override to prevent deleting part of the prompt."""
-        if self.check_cursor_location(self.cursor_location):
-            return
-        
-        else:
-            return super().action_delete_word_left()
-        
-    def action_delete_to_start_of_line(self):
-        """Delete up to the prompt"""
-        if self.multiline:
-            index = self.text.rfind('\\\n> ') + 4
-            text = self.text[:index]
-            self.clear()
-            self.insert(text)
-            
-        else:
-            self.text = self.prompt
-            self.action_cursor_line_end()
-            
-    def action_cut(self):
-        """Basically ctrl+u. Figure out how to do selections."""
-        if self.multiline:
-            index = self.text.rfind('\\\n> ') + 4
-            text = self.text[:index]
-            self.clear()
-            self.insert(text)
-            
-        else:
-            self.text = self.prompt
-            self.action_cursor_line_end()
-            
-    def action_cursor_up(self, select) -> None:
-        """Override to prevent this behavior."""
-        return
-    
-    def action_cursor_down(self, select = False):
-        """OVerride to prevent this behavior."""
-        return
-        
-    def action_cursor_page_down(self):
-        """Override to prevent this behavior."""
-        return 
-    
-    def action_cursor_page_up(self):
-        """Override to prevent this behavior."""
-        return
-            
-    def action_select_line(self):
-        """Override to prevent this behavior."""
-        return
-        
-    def action_select_all(self):
-        """Override to prevent this behavior."""
-        return
-    
-    def _on_mouse_down(self, event: events.MouseDown):
-        """Prevent all mouse events"""
-        event.stop()
-        event.prevent_default()
-        
-    def _on_mouse_move(self, event: events.MouseMove):
-        """Prevent all mouse events"""
-        event.stop()
-        event.prevent_default()
-        
-    def _on_mouse_up(self, event: events.MouseUp):
-        """Prevent all mouse events"""
-        event.stop()
-        event.prevent_default()
-    
     
 class BashShell(Screen):
     """
@@ -429,14 +245,14 @@ class BashShell(Screen):
         
     def compose(self) -> ComposeResult:
         yield RichLog(markup=True, wrap=True)
-        yield BashTextArea()
+        yield BashArea()
     
     def on_mount(self) -> None:
         self.user = os.environ.get('USER', 'user')
         self.current_dir = os.getcwd()
         self.create_prompt()
         
-        text_area = self.query_one(BashTextArea)
+        text_area = self.query_one(BashArea)
         text_area.focus()
         
     def create_prompt(self) -> None:
@@ -523,9 +339,9 @@ class BashShell(Screen):
         if new_user != self.user:
             self.user = new_user
         
-    async def on_bash_text_area_execute(
+    async def on_shell_area_execute(
         self,
-        event: BashTextArea.Execute
+        event: ShellArea.Execute
     ) -> None:
         """
         Execute the command by piping it into stdin of the bash shell.
@@ -536,9 +352,9 @@ class BashShell(Screen):
             event (BashTextArea.Execute): The message with the command.
         """
         rich_log = self.query_one(RichLog)
-        text_area = self.query_one(BashTextArea)
+        text_area = self.query_one(BashArea)
         
-        text = event.text.replace('\\\n> ', '').strip()
+        text = event.command.replace('\\\n> ', '').strip()
             
         if text != '':
             text_area.history_list.appendleft(text)
@@ -554,19 +370,19 @@ class BashShell(Screen):
             cmds = text.split(' && ')
             for cmd in cmds:
                 if cmd.startswith(self.INCOMPATIBLE_COMMANDS):
-                    rich_log.write(self.prompt + event.text)
+                    rich_log.write(self.prompt + event.command)
                     await self.update_from_stderr(f'COMMAND: {cmd} is not compatible')
                     return
                 
         elif text.startswith(self.INCOMPATIBLE_COMMANDS):
-            rich_log.write(self.prompt + event.text)
+            rich_log.write(self.prompt + event.command)
             await self.update_from_stderr(f'COMMAND: {text} is not compatible')
             return
             
         self.BASH_SHELL.stdin.write(text.encode() + b'\n')
         await self.BASH_SHELL.stdin.drain()
           
-        rich_log.write(self.prompt + event.text)
+        rich_log.write(self.prompt + event.command)
         
         if text.count('cd') > 0:
             self.handle_cd(text)
@@ -574,9 +390,9 @@ class BashShell(Screen):
         if text.count('su') > 0:
             self.handle_su()
             
-    def on_bash_text_area_show_suggestions(
+    def on_bash_area_show_suggestions(
         self,
-        event: BashTextArea.ShowSuggestions) -> None:
+        event: BashArea.ShowSuggestions) -> None:
         """
         Show available suggestions for tab completions
         
@@ -628,7 +444,7 @@ class BashShell(Screen):
         
     def watch_prompt(self) -> None:
         """Whenever the prompt changes update the text area."""
-        textarea = self.query_one(BashTextArea)
+        textarea = self.query_one(BashArea)
         textarea.prompt = self.prompt
         
 
