@@ -1,6 +1,7 @@
 import asyncio
 from typing import Annotated
 
+from textual import log
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.screen import Screen
@@ -26,6 +27,40 @@ class PythonArea(ShellArea):
     def action_tab(self):
         """Insert tab"""
         self.insert('\t')
+
+    def send_command(self, text: str):
+        """
+        Post the Execute message.
+        
+        Args:
+            text (str): The command to post.
+        """
+        text = text[len(self.prompt):]
+        self.post_message(self.Execute(text))
+
+        self.current_history_index = None
+        self.action_clear()
+        self.action_cursor_line_end()
+        self.multiline = False
+
+    def action_enter_pressed(self):
+        """Handler for pressing the enter key."""
+        self.action_cursor_line_end()
+        
+        text = self.text
+        if text.endswith(self.multiline_char) and self.multiline == False:
+            self.insert(self.multiline_prompt)
+            self.multiline = True
+        
+        elif self.multiline == True:
+            if text.endswith(self.multiline_prompt):
+                self.send_command(text)
+             
+            else:
+                self.insert(self.multiline_prompt)
+        
+        else:
+            self.send_command(text)
 
 
 class PythonInterpreter(Screen):
@@ -89,7 +124,7 @@ class PythonInterpreter(Screen):
         return to the main screen"""
         for task in self.tasks:
             task.cancel()
-            
+
         self.PYTHON_INTERPRETER.kill()
         self.interpreter_task.cancel()
         self.app.pop_screen()
@@ -128,8 +163,12 @@ class PythonInterpreter(Screen):
         """
         rich_log = self.query_one(RichLog)
         interpreter = self.query_one(PythonArea)
+        
+        text = event.command
+        if text.count('\n... ') > 0:
+            text += '\n'
 
-        text = event.command.replace('\n... ', '').strip()
+        text = text.replace('\n... ', '')
 
         if text != '':
             interpreter.history_list.appendleft(text)
