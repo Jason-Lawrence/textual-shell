@@ -130,7 +130,7 @@ class PythonInterpreter(Screen):
         self.app.pop_screen()
 
     async def setup(self):
-        """Spawn the child process to run the bash shell.
+        """Spawn the child process to run the python interpreter.
         Also create the tasks for reading stdout and stderr."""
         self.PYTHON_INTERPRETER = await asyncio.create_subprocess_exec(
             'python',
@@ -165,8 +165,6 @@ class PythonInterpreter(Screen):
         interpreter = self.query_one(PythonArea)
         
         text = event.command
-        # if text.count('\n... ') > 0:
-        #     text += '\n'
 
         text = text.replace('\n... ', '\n')
 
