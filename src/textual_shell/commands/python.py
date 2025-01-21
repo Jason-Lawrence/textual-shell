@@ -1,12 +1,8 @@
 import asyncio
-import os
 from typing import Annotated
 
-from textual import log
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.message import Message
-from textual.reactive import reactive
 from textual.screen import Screen
 from textual.widgets import RichLog
 
@@ -17,7 +13,19 @@ from ..widgets import ShellArea
 
 
 class PythonArea(ShellArea):
-    pass
+    """Custom TextArea to replicate a 
+    python interpreter's interface."""
+    BINDINGS = [
+        Binding('tab', 'tab', 'Insert Tab', show=False, priority=True)
+    ]
+
+    prompt = '>>> '
+    multiline_char = ':'
+    multiline_prompt = '\n... '
+
+    def action_tab(self):
+        """Insert tab"""
+        self.insert('\t')
 
 
 class PythonInterpreter(Screen):
@@ -59,6 +67,7 @@ class PythonInterpreter(Screen):
         *args, **kwargs
     ) -> None:
         super().__init__(*args, **kwargs)
+        self.prompt = '>>> '
         self.interpreter_task = task
         self.run_worker(self.setup())
 
@@ -80,7 +89,8 @@ class PythonInterpreter(Screen):
         return to the main screen"""
         for task in self.tasks:
             task.cancel()
-        
+            
+        self.PYTHON_INTERPRETER.kill()
         self.interpreter_task.cancel()
         self.app.pop_screen()
 
@@ -89,6 +99,7 @@ class PythonInterpreter(Screen):
         Also create the tasks for reading stdout and stderr."""
         self.PYTHON_INTERPRETER = await asyncio.create_subprocess_exec(
             'python',
+            '-i',
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE
@@ -109,7 +120,28 @@ class PythonInterpreter(Screen):
         self,
         event: ShellArea.Execute
     ) -> None:
-        pass
+        """
+        Execute the python code.
+
+        Args:
+            event (ShellArea.Execute): The message with the code.
+        """
+        rich_log = self.query_one(RichLog)
+        interpreter = self.query_one(PythonArea)
+
+        text = event.command.replace('\n... ', '').strip()
+
+        if text != '':
+            interpreter.history_list.appendleft(text)
+        
+        if text == 'exit()':
+            self.action_kill_shell()
+        
+        self.PYTHON_INTERPRETER.stdin.write(text.encode() + b'\n')
+        await self.PYTHON_INTERPRETER.stdin.drain()
+
+        rich_log.write(self.prompt + event.command)
+        
 
     async def update_from_stdout(self, output) -> None:
         """Take stdout and write it to the RichLog."""
@@ -124,7 +156,7 @@ class PythonInterpreter(Screen):
     async def read_stdout(self):
         """Coroutine for reading stdout and updating the RichLog."""
         try:
-            async for line in self.BASH_SHELL.stdout:
+            async for line in self.PYTHON_INTERPRETER.stdout:
                 decoded = line.decode().strip()
                 await self.update_from_stdout(decoded)
         
@@ -134,7 +166,7 @@ class PythonInterpreter(Screen):
     async def read_stderr(self):
         """Coroutine for reading stderr and updating the RichLog."""
         try:
-            async for line in self.BASH_SHELL.stderr:
+            async for line in self.PYTHON_INTERPRETER.stderr:
                 decoded = line.decode().strip()
                 await self.update_from_stderr(decoded)
 
