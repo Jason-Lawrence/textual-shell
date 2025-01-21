@@ -36,6 +36,8 @@ class ShellArea(TextArea):
     current_history_index = None
     prompt = reactive(str)
     multiline = False
+    multiline_prompt = ''
+    multiline_char = ''
 
     def on_mount(self):
         self.action_cursor_line_end()
@@ -51,7 +53,20 @@ class ShellArea(TextArea):
         If the command has a '\\' at the end
         then it is a multiline command.
         """
-        raise NotImplementedError('Subclass must implement this method.')
+        text = self.text
+        if text.endswith(self.multiline_char):
+            self.insert(self.multiline_prompt)
+            self.multiline = True
+            return
+        
+        else:
+            text = text[len(self.prompt):]
+            self.post_message(self.Execute(text))
+
+        self.current_history_index = None
+        self.action_clear()
+        self.action_cursor_line_end()
+        self.multiline = False
 
     def action_clear(self):
         """WHen ctrl+c is hit clear the text area."""
