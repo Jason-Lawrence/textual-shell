@@ -165,10 +165,10 @@ class PythonInterpreter(Screen):
         interpreter = self.query_one(PythonArea)
         
         text = event.command
-        if text.count('\n... ') > 0:
-            text += '\n'
+        # if text.count('\n... ') > 0:
+        #     text += '\n'
 
-        text = text.replace('\n... ', '')
+        text = text.replace('\n... ', '\n')
 
         if text != '':
             interpreter.history_list.appendleft(text)
