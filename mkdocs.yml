@@ -57,6 +57,7 @@ nav:
     - CLEAR: commands/clear.md
     - HELP: commands/help.md
     - JOBS: commands/jobs.md
+    - PYTHON: commands/python.md
     - SET: commands/set.md
 
   - Reference:

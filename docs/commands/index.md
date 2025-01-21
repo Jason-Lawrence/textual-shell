@@ -25,6 +25,11 @@ A command for interacting with jobs.
 [JOBS Reference](jobs.md){ .md-button .md-button--primary }
 
 
+## PYTHON
+A command that spawns an interactive python interpreter.
+
+[PYTHON Reference](python.md){ .md-button .md-button--primary }
+
 ## SET
 A basic command for setting shell variables.
 
