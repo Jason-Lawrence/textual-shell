@@ -5,7 +5,7 @@ from textual.containers import Grid, Container
 from textual.widgets import Header, Footer
 
 from textual_shell.app import BaseShellApp
-from textual_shell.commands import Clear, Bash, Help, Jobs, Python, Set
+from textual_shell.commands import Bash, Clear, Help, Jobs, Python, Set
 from textual_shell.widgets import (
     Shell,
     CommandList,
