@@ -1,12 +1,10 @@
 import asyncio
 from typing import Annotated
 
-from textual import log
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.screen import Screen
 from textual.widgets import RichLog
-
 
 from ..command import Command, CommandNode
 from ..job import Job
@@ -73,7 +71,7 @@ class PythonInterpreter(Screen):
 
     BINDINGS = [
         Binding('ctrl+z', 'background_job', 'Background the job.', priority=True),
-        Binding('ctrl+d', 'kill_shell', 'Close the shell', priority=True),
+        Binding('ctrl+d', 'kill_interpreter', 'Close the shell', priority=True),
     ]
 
     DEFAULT_CSS = """
@@ -115,12 +113,12 @@ class PythonInterpreter(Screen):
         text_area.focus()
 
     def action_background_job(self) -> None:
-        """Background the bash shell and 
+        """Background the interpreter and 
         return to the main screen."""
         self.app.pop_screen()
     
-    def action_kill_shell(self) -> None:
-        """Kill the bash shell job and 
+    def action_kill_interpreter(self) -> None:
+        """Kill the interpreter and 
         return to the main screen"""
         for task in self.tasks:
             task.cancel()
@@ -212,9 +210,11 @@ class PythonInterpreter(Screen):
         
 
 class RunPythonInterpreter(Job):
-    """"""
-
+    """Creates the python interpreter screen and
+      installs it onto the screen stack"""
+    
     async def execute(self):
+        """Execute the interpreter."""
         self.running()
 
         self.screen = PythonInterpreter(self.task)
@@ -228,7 +228,7 @@ class RunPythonInterpreter(Job):
 
 
 class Python(Command):
-    """"""
+    """Command for spawning an interactive python interpreter."""
     DEFINITION = {
         'python': CommandNode(
             name='python',
@@ -237,7 +237,7 @@ class Python(Command):
     }
 
     def create_job(self, *args):
-        """"""
+        """Creates the job to spawn the interpreter."""
         return RunPythonInterpreter(
             shell=self.shell,
             cmd=self.name
