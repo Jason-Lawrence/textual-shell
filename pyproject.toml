@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "textual-shell"
-version = "0.9.85"
+version = "0.9.9"
 license = {file = "LICENSE"}
 authors = [
     { name="Jason Lawrence", email="thejasonlawrence1@gmail.com" },

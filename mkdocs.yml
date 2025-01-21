@@ -47,7 +47,8 @@ nav:
     - Shell: 
       - widgets/shell/index.md
       - BaseShell: widgets/shell/base_shell.md
-      - Shell: widgets/shell/shell.md 
+      - Shell: widgets/shell/shell.md
+    - ShellArea: widgets/shell_area.md
     - Suggestions: widgets/suggestions.md
 
   - Commands:
@@ -56,6 +57,7 @@ nav:
     - CLEAR: commands/clear.md
     - HELP: commands/help.md
     - JOBS: commands/jobs.md
+    - PYTHON: commands/python.md
     - SET: commands/set.md
 
   - Reference:

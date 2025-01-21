@@ -47,6 +47,8 @@ class BashArea(ShellArea):
     )
     
     shell_working_directory = os.getcwd()
+    multiline_char = '\\'
+    multiline_prompt = '\n> '
 
     def watch_prompt(self, prompt) -> None:
         """Switch to the new prompt."""
@@ -169,27 +171,6 @@ class BashArea(ShellArea):
                             self.send_suggestions(suggestions)
             except:
                 pass
-            
-    def action_enter_pressed(self):
-        """
-        Handler for the enter key.
-        If the command has a '\\' at the end
-        then it is a multiline command.
-        """
-        text = self.text
-        if text.endswith('\\'):
-            self.insert('\n> ')
-            self.multiline = True
-            return
-        
-        else:
-            text = text[len(self.prompt):]
-            self.post_message(self.Execute(text))
-        
-        self.current_history_index = None
-        self.action_clear()
-        self.action_cursor_line_end()
-        self.multiline = False
 
     
 class BashShell(Screen):
@@ -349,7 +330,7 @@ class BashShell(Screen):
         output. Only the RichLog needs to be cleared anyway.
         
         Args:
-            event (BashTextArea.Execute): The message with the command.
+            event (ShellArea.Execute): The message with the command.
         """
         rich_log = self.query_one(RichLog)
         text_area = self.query_one(BashArea)
